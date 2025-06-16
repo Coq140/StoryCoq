@@ -3,272 +3,147 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin - Gestion utilisateurs avancée</title>
+  <title>Admin Panel | InstaClone</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; padding: 10px;}
-    table {width: 100%; border-collapse: collapse; margin-top: 15px;}
-    th, td {border: 1px solid #aaa; padding: 8px; text-align: left; vertical-align: middle;}
-    th {background-color: #ddd;}
-    input[type="text"], select {width: 100%; padding: 5px; box-sizing: border-box;}
-    button {margin-top: 10px; padding: 8px 12px; cursor: pointer; background: #0095f6; color: white; border: none; border-radius: 4px; font-weight: bold;}
-    nav a {margin-right: 10px; text-decoration: none; font-weight: bold; color: #333;}
-    .logo-entreprise {
-      width: 25px;
-      height: 25px;
-      border-radius: 50%;
-      vertical-align: middle;
-      margin-left: 6px;
-      border: 1px solid #aaa;
-    }
+    body { font-family: Arial, sans-serif; background: #fafafa; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #333; color: white; }
+    button { padding: 5px 10px; margin: 0 3px; }
     .badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      color: white;
-      font-size: 14px;
-      font-weight: bold;
-      margin-left: 6px;
+      font-size: 18px;
+      margin-right: 5px;
     }
-    .badge.admin { background-color: #e74c3c; }        /* rouge */
-    .badge.certifie { background-color: #3498db; }    /* bleu */
-    .badge.entreprise { background-color: #27ae60; }  /* vert */
+    .logo {
+      width: 30px;
+      height: 30px;
+      vertical-align: middle;
+      border-radius: 3px;
+      margin-right: 5px;
+    }
   </style>
 </head>
 <body>
 
-<header>
-  <h1>Admin - Gestion des utilisateurs</h1>
-  <nav>
-    <a href="feed.html">Feed</a>
-    <a href="profil.html">Profil</a>
-    <a href="index.html" onclick="logout()">Déconnexion</a>
-  </nav>
-</header>
-
-<div id="message"></div>
+<h1>Panel Admin</h1>
 
 <table id="usersTable">
   <thead>
     <tr>
-      <th>Nom d'utilisateur</th>
-      <th>Badge</th>
-      <th>Entreprise affiliée</th>
-      <th>Bio</th>
-      <th>Avatar URL</th>
-      <th>Bannière URL</th>
-      <th>Story</th>
+      <th>Utilisateur</th>
+      <th>Badges</th>
+      <th>Affilié à</th>
       <th>Actions</th>
     </tr>
   </thead>
-  <tbody>
-    <!-- Utilisateurs listés ici -->
-  </tbody>
+  <tbody></tbody>
 </table>
 
+<button onclick="logout()">Déconnexion</button>
+
 <script>
-  // Récupération des utilisateurs et utilisateur courant
-  let users = JSON.parse(localStorage.getItem('instaUsers')) || {};
-  let currentUser = JSON.parse(localStorage.getItem('instaUser'));
+const entreprises = {
+  'AcmeCorp': { name: "Acme Corporation", logo: "logos/acmecorp.png" },
+  'TechInc': { name: "Tech Incorporated", logo: "logos/techinc.png" },
+};
 
-  // Vérification que seul un admin peut accéder
-  if (!currentUser || currentUser.badge !== "admin") {
-    alert("Accès refusé : page admin réservée aux administrateurs.");
-    window.location.href = "index.html";
-  }
+let users = JSON.parse(localStorage.getItem('instaUsers')) || [];
 
-  function saveUsers() {
-    localStorage.setItem('instaUsers', JSON.stringify(users));
-  }
+// On s’assure que l’administrateur est connecté (et a badge admin)
+const currentUser = JSON.parse(localStorage.getItem('instaUser'));
+if(!currentUser || !currentUser.badges || !currentUser.badges.includes('admin')){
+  alert("Accès refusé : vous devez être admin.");
+  window.location.href = "index.html";
+}
 
-  function updateCurrentUserIfNeeded(username) {
-    if (currentUser && currentUser.name === username) {
-      currentUser = { name: username, ...users[username] };
-      localStorage.setItem('instaUser', JSON.stringify(currentUser));
-    }
-  }
+function renderUsers(){
+  const tbody = document.querySelector('#usersTable tbody');
+  tbody.innerHTML = '';
+  users.forEach((user, i) => {
+    const tr = document.createElement('tr');
 
-  // Fonction pour retourner le SVG simple pour badge
-  function getBadgeSVG(badge) {
-    // Icônes simples par badge
-    switch(badge) {
-      case 'admin':
-        return "A";
-      case 'certifie':
-        return "✔";
-      case 'entreprise':
-        return "E";
-      default:
-        return "";
-    }
-  }
+    // Nom
+    const tdName = document.createElement('td');
+    tdName.textContent = user.name;
+    tr.appendChild(tdName);
 
-  function buildTable() {
-    const tbody = document.querySelector('#usersTable tbody');
-    tbody.innerHTML = '';
-
-    for (const username in users) {
-      const user = users[username];
-      const tr = document.createElement('tr');
-
-      // Nom + logo entreprise affiliée + badge
-      const tdName = document.createElement('td');
-      tdName.textContent = username;
-
-      // Logo entreprise affiliée si existante
-      if (user.entrepriseAffiliee && users[user.entrepriseAffiliee]) {
-        const logoEntreprise = document.createElement('img');
-        logoEntreprise.src = users[user.entrepriseAffiliee].avatar || "default-avatar.png";
-        logoEntreprise.alt = user.entrepriseAffiliee;
-        logoEntreprise.className = "logo-entreprise";
-        logoEntreprise.title = `Affilié à ${user.entrepriseAffiliee}`;
-        tdName.appendChild(document.createTextNode(" "));
-        tdName.appendChild(logoEntreprise);
-      }
-
-      // Badge graphique
-      if (user.badge) {
-        const badgeSpan = document.createElement('span');
-        badgeSpan.className = `badge ${user.badge}`;
-        badgeSpan.title = user.badge.charAt(0).toUpperCase() + user.badge.slice(1);
-        badgeSpan.textContent = getBadgeSVG(user.badge);
-        tdName.appendChild(badgeSpan);
-      }
-
-      tr.appendChild(tdName);
-
-      // Colonne badge (dropdown pour changer)
-      const tdBadge = document.createElement('td');
-      const selectBadge = document.createElement('select');
-      const badges = ["", "certifie", "entreprise", "admin"];
-      badges.forEach(b => {
-        const option = document.createElement('option');
-        option.value = b;
-        option.textContent = b === "" ? "(aucun)" : b;
-        if (user.badge === b) option.selected = true;
-        selectBadge.appendChild(option);
+    // Badges
+    const tdBadges = document.createElement('td');
+    if(user.badges){
+      user.badges.forEach(b => {
+        const span = document.createElement('span');
+        span.className = 'badge';
+        if(b === 'admin') span.textContent = '🛡️';
+        else if(b === 'staff') span.textContent = '⭐';
+        else if(b === 'vip') span.textContent = '💎';
+        else span.textContent = b;
+        tdBadges.appendChild(span);
       });
-      tdBadge.appendChild(selectBadge);
-      tr.appendChild(tdBadge);
-
-      // Entreprise affiliée (input activé seulement si badge = entreprise)
-      const tdEntreprise = document.createElement('td');
-      const inputEntreprise = document.createElement('input');
-      inputEntreprise.type = 'text';
-      inputEntreprise.placeholder = "Nom compte affilié";
-      inputEntreprise.value = user.entrepriseAffiliee || "";
-      if (user.badge !== "entreprise") {
-        inputEntreprise.disabled = true;
-        inputEntreprise.style.backgroundColor = "#eee";
-      }
-      tdEntreprise.appendChild(inputEntreprise);
-      tr.appendChild(tdEntreprise);
-
-      // Bio
-      const tdBio = document.createElement('td');
-      const inputBio = document.createElement('input');
-      inputBio.type = 'text';
-      inputBio.value = user.bio || "";
-      tdBio.appendChild(inputBio);
-      tr.appendChild(tdBio);
-
-      // Avatar URL
-      const tdAvatar = document.createElement('td');
-      const inputAvatar = document.createElement('input');
-      inputAvatar.type = 'text';
-      inputAvatar.value = user.avatar || "";
-      tdAvatar.appendChild(inputAvatar);
-      tr.appendChild(tdAvatar);
-
-      // Bannière URL
-      const tdBanner = document.createElement('td');
-      const inputBanner = document.createElement('input');
-      inputBanner.type = 'text';
-      inputBanner.value = user.banner || "";
-      tdBanner.appendChild(inputBanner);
-      tr.appendChild(tdBanner);
-
-      // Story
-      const tdStory = document.createElement('td');
-      const inputStory = document.createElement('input');
-      inputStory.type = 'text';
-      inputStory.value = user.story || "";
-      tdStory.appendChild(inputStory);
-      tr.appendChild(tdStory);
-
-      // Actions
-      const tdActions = document.createElement('td');
-      const btnSave = document.createElement('button');
-      btnSave.textContent = "Sauvegarder";
-      btnSave.onclick = () => {
-        const badgeSelected = selectBadge.value;
-        users[username].badge = badgeSelected;
-        users[username].bio = inputBio.value.trim();
-        users[username].avatar = inputAvatar.value.trim() || "default-avatar.png";
-        users[username].banner = inputBanner.value.trim();
-        users[username].story = inputStory.value.trim();
-
-        if (badgeSelected === "entreprise") {
-          const affilié = inputEntreprise.value.trim();
-          if (affilié && users[affilié]) {
-            users[username].entrepriseAffiliee = affilié;
-          } else {
-            alert("Le compte affilié n'existe pas. Laissez vide ou mettez un compte valide.");
-            users[username].entrepriseAffiliee = "";
-            inputEntreprise.value = "";
-          }
-        } else {
-          users[username].entrepriseAffiliee = "";
-          inputEntreprise.value = "";
-        }
-
-        saveUsers();
-        updateCurrentUserIfNeeded(username);
-        alert(`Utilisateur "${username}" mis à jour !`);
-        buildTable();
-      };
-      tdActions.appendChild(btnSave);
-
-      // Supprimer un utilisateur (sauf soi-même)
-      if (currentUser.badge === "admin" && username !== currentUser.name) {
-        const btnDelete = document.createElement('button');
-        btnDelete.textContent = "Supprimer";
-        btnDelete.style.marginLeft = "8px";
-        btnDelete.onclick = () => {
-          if (confirm(`Supprimer l'utilisateur "${username}" ?`)) {
-            delete users[username];
-            saveUsers();
-            buildTable();
-          }
-        };
-        tdActions.appendChild(btnDelete);
-      }
-
-      tr.appendChild(tdActions);
-
-      // Gestion activation/désactivation champ affiliation suivant badge sélectionné
-      selectBadge.onchange = () => {
-        if (selectBadge.value === "entreprise") {
-          inputEntreprise.disabled = false;
-          inputEntreprise.style.backgroundColor = "";
-        } else {
-          inputEntreprise.disabled = true;
-          inputEntreprise.style.backgroundColor = "#eee";
-          inputEntreprise.value = "";
-        }
-      };
-
-      tbody.appendChild(tr);
     }
-  }
+    tr.appendChild(tdBadges);
 
-  function logout() {
-    localStorage.removeItem('instaUser');
-  }
+    // Affilié à (logo + nom)
+    const tdAffiliate = document.createElement('td');
+    if(user.affiliateWith && entreprises[user.affiliateWith]){
+      const img = document.createElement('img');
+      img.src = entreprises[user.affiliateWith].logo;
+      img.alt = entreprises[user.affiliateWith].name;
+      img.title = entreprises[user.affiliateWith].name;
+      img.className = 'logo';
+      tdAffiliate.appendChild(img);
+      tdAffiliate.appendChild(document.createTextNode(entreprises[user.affiliateWith].name));
+    } else {
+      tdAffiliate.textContent = '—';
+    }
+    tr.appendChild(tdAffiliate);
 
-  buildTable();
+    // Actions : Boutons d’ajout/retrait affiliation
+    const tdActions = document.createElement('td');
+
+    // Liste déroulante pour choisir entreprise affiliation
+    const select = document.createElement('select');
+    const optionNone = document.createElement('option');
+    optionNone.value = '';
+    optionNone.textContent = 'Aucune';
+    select.appendChild(optionNone);
+
+    Object.keys(entreprises).forEach(pseudo => {
+      const option = document.createElement('option');
+      option.value = pseudo;
+      option.textContent = entreprises[pseudo].name;
+      if(user.affiliateWith === pseudo) option.selected = true;
+      select.appendChild(option);
+    });
+    tdActions.appendChild(select);
+
+    // Bouton sauvegarde
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Sauvegarder';
+    saveBtn.onclick = () => {
+      user.affiliateWith = select.value || null;
+      saveUsers();
+      renderUsers();
+      alert(`Affiliation mise à jour pour ${user.name}`);
+    };
+    tdActions.appendChild(saveBtn);
+
+    tr.appendChild(tdActions);
+
+    tbody.appendChild(tr);
+  });
+}
+
+function saveUsers(){
+  localStorage.setItem('instaUsers', JSON.stringify(users));
+}
+
+// Chargement initial
+renderUsers();
+
+function logout(){
+  localStorage.removeItem('instaUser');
+  window.location.href = "index.html";
+}
 </script>
 
 </body>
