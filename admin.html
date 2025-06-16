@@ -47,19 +47,48 @@ const entreprises = {
   'TechInc': { name: "Tech Incorporated", logo: "logos/techinc.png" },
 };
 
-let users = JSON.parse(localStorage.getItem('instaUsers')) || [];
+// Injecte des utilisateurs d'exemple si localStorage est vide
+if(!localStorage.getItem('instaUsers')){
+  const sampleUsers = [
+    { name: "Alice", badges: ["admin"], affiliateWith: "AcmeCorp" },
+    { name: "Bob", badges: ["vip"], affiliateWith: "TechInc" },
+    { name: "Charlie", badges: [] }
+  ];
+  localStorage.setItem('instaUsers', JSON.stringify(sampleUsers));
+}
 
-// On s’assure que l’administrateur est connecté (et a badge admin)
+let users = JSON.parse(localStorage.getItem('instaUsers'));
+
+// Injecte un utilisateur admin connecté si aucun instaUser
+if(!localStorage.getItem('instaUser')){
+  localStorage.setItem('instaUser', JSON.stringify({ name: "Alice", badges: ["admin"] }));
+}
+
 const currentUser = JSON.parse(localStorage.getItem('instaUser'));
+
+// Vérification admin
 if(!currentUser || !currentUser.badges || !currentUser.badges.includes('admin')){
   alert("Accès refusé : vous devez être admin.");
   window.location.href = "index.html";
 }
 
 function renderUsers(){
+  console.log("Rendering users:", users);
   const tbody = document.querySelector('#usersTable tbody');
   tbody.innerHTML = '';
-  users.forEach((user, i) => {
+
+  if(users.length === 0){
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 4;
+    td.style.textAlign = 'center';
+    td.textContent = 'Aucun utilisateur trouvé.';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+
+  users.forEach((user) => {
     const tr = document.createElement('tr');
 
     // Nom
@@ -70,19 +99,19 @@ function renderUsers(){
     // Badges
     const tdBadges = document.createElement('td');
     if(user.badges){
-      user.badges.forEach(b => {
+      user.badges.forEach(badge => {
         const span = document.createElement('span');
         span.className = 'badge';
-        if(b === 'admin') span.textContent = '🛡️';
-        else if(b === 'staff') span.textContent = '⭐';
-        else if(b === 'vip') span.textContent = '💎';
-        else span.textContent = b;
+        if(badge === 'admin') span.textContent = '🛡️';
+        else if(badge === 'staff') span.textContent = '⭐';
+        else if(badge === 'vip') span.textContent = '💎';
+        else span.textContent = badge;
         tdBadges.appendChild(span);
       });
     }
     tr.appendChild(tdBadges);
 
-    // Affilié à (logo + nom)
+    // Affilié à
     const tdAffiliate = document.createElement('td');
     if(user.affiliateWith && entreprises[user.affiliateWith]){
       const img = document.createElement('img');
@@ -97,26 +126,27 @@ function renderUsers(){
     }
     tr.appendChild(tdAffiliate);
 
-    // Actions : Boutons d’ajout/retrait affiliation
+    // Actions
     const tdActions = document.createElement('td');
 
-    // Liste déroulante pour choisir entreprise affiliation
+    // Sélecteur d’affiliation
     const select = document.createElement('select');
+
     const optionNone = document.createElement('option');
     optionNone.value = '';
     optionNone.textContent = 'Aucune';
     select.appendChild(optionNone);
 
-    Object.keys(entreprises).forEach(pseudo => {
+    Object.keys(entreprises).forEach(key => {
       const option = document.createElement('option');
-      option.value = pseudo;
-      option.textContent = entreprises[pseudo].name;
-      if(user.affiliateWith === pseudo) option.selected = true;
+      option.value = key;
+      option.textContent = entreprises[key].name;
+      if(user.affiliateWith === key) option.selected = true;
       select.appendChild(option);
     });
     tdActions.appendChild(select);
 
-    // Bouton sauvegarde
+    // Bouton sauvegarder
     const saveBtn = document.createElement('button');
     saveBtn.textContent = 'Sauvegarder';
     saveBtn.onclick = () => {
@@ -137,13 +167,14 @@ function saveUsers(){
   localStorage.setItem('instaUsers', JSON.stringify(users));
 }
 
-// Chargement initial
-renderUsers();
-
 function logout(){
   localStorage.removeItem('instaUser');
   window.location.href = "index.html";
 }
+
+// Affiche la liste au chargement
+renderUsers();
+
 </script>
 
 </body>
