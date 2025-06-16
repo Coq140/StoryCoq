@@ -2,25 +2,34 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Panel Admin</title>
+  <title>Panel Admin sécurisé</title>
   <style>
     body { font-family: Arial, sans-serif; max-width: 700px; margin: auto; padding: 20px; background: #f0f0f0; }
     h1 { text-align: center; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     th, td { padding: 8px; border: 1px solid #ccc; text-align: left; }
     button { padding: 5px 10px; margin: 2px; cursor: pointer; }
-    input { padding: 5px; margin: 5px 0; width: 100%; }
-    #addAdminForm { margin-top: 20px; background: #fff; padding: 10px; border-radius: 8px; box-shadow: 0 0 8px rgba(0,0,0,0.1); }
+    input, select { padding: 5px; margin: 5px 0; width: 100%; }
+    #addRoleForm { margin-top: 20px; background: #fff; padding: 10px; border-radius: 8px; box-shadow: 0 0 8px rgba(0,0,0,0.1); }
+    .password-hidden { font-family: monospace; }
   </style>
 </head>
 <body>
 
-  <h1>Panel Admin</h1>
+  <h1>Panel Admin sécurisé</h1>
 
-  <div id="addAdminForm">
-    <h3>Ajouter un administrateur manuellement</h3>
-    <input type="text" id="newAdminName" placeholder="Nom d'utilisateur" />
-    <button onclick="addAdminManuel()">Ajouter Admin</button>
+  <button onclick="logout()" style="float:right; margin-bottom: 10px;">Déconnexion</button>
+
+  <div id="addRoleForm">
+    <h3>Attribuer un rôle à un utilisateur</h3>
+    <input type="text" id="userName" placeholder="Nom d'utilisateur" />
+    <select id="roleSelect">
+      <option value="user">Utilisateur (user)</option>
+      <option value="admin">Administrateur (admin)</option>
+      <option value="entreprise">Entreprise</option>
+      <option value="certifie">Certifié</option>
+    </select>
+    <button onclick="assignRole()">Attribuer le rôle</button>
   </div>
 
   <h2>Liste des utilisateurs</h2>
@@ -37,7 +46,6 @@
   </table>
 
   <script>
-    // Récupération et synchronisation currentUser et instaUsers
     let currentUser = JSON.parse(localStorage.getItem('instaUser'));
     let users = JSON.parse(localStorage.getItem('instaUsers')) || {};
 
@@ -46,96 +54,114 @@
       localStorage.setItem('instaUser', JSON.stringify(currentUser));
     }
 
-    // Vérification admin
     if (!currentUser || currentUser.badge !== 'admin') {
-      alert("Accès refusé : page admin réservée aux administrateurs.");
+      alert("Accès refusé : page réservée aux administrateurs.");
       window.location.href = "index.html";
     }
 
-    // Afficher la liste des utilisateurs dans le tableau
     function displayUsers() {
       const tbody = document.getElementById('usersTableBody');
       tbody.innerHTML = '';
       Object.keys(users).forEach(username => {
         const user = users[username];
+        const role = user.badge || 'user';
+
         const tr = document.createElement('tr');
+
+        // Mot de passe masqué par défaut avec bouton pour afficher/cacher
+        const pwdId = `pwd_${username}`;
+        const btnId = `btn_${username}`;
 
         tr.innerHTML = `
           <td>${username}</td>
-          <td>${user.badge || 'user'}</td>
-          <td>${user.password || ''}</td>
+          <td>${role}</td>
           <td>
-            ${user.badge !== 'admin' ? `<button onclick="giveAdmin('${username}')">Donner Admin</button>` : ''}
+            <span id="${pwdId}" class="password-hidden">${'*'.repeat(user.password ? user.password.length : 8)}</span>
+            <button id="${btnId}" onclick="togglePassword('${username}')">Voir</button>
+          </td>
+          <td>
+            ${role !== 'admin' ? `<button onclick="giveRole('${username}', 'admin')">Donner Admin</button>` : ''}
             <button onclick="removeUser('${username}')">Supprimer</button>
           </td>
         `;
-
         tbody.appendChild(tr);
       });
     }
 
-    // Donner le badge admin à un utilisateur
-    function giveAdmin(username) {
-      if (confirm(`Donner le rôle admin à ${username} ?`)) {
-        users[username].badge = 'admin';
+    function togglePassword(username) {
+      const pwdSpan = document.getElementById(`pwd_${username}`);
+      const btn = document.getElementById(`btn_${username}`);
+      if (pwdSpan.textContent.startsWith('*')) {
+        pwdSpan.textContent = users[username].password || '(aucun)';
+        btn.textContent = 'Cacher';
+      } else {
+        pwdSpan.textContent = '*'.repeat(users[username].password ? users[username].password.length : 8);
+        btn.textContent = 'Voir';
+      }
+    }
+
+    function giveRole(username, role) {
+      if (!users[username]) {
+        alert("Utilisateur introuvable.");
+        return;
+      }
+      if (confirm(`Attribuer le rôle "${role}" à ${username} ?`)) {
+        users[username].badge = role;
         localStorage.setItem('instaUsers', JSON.stringify(users));
         if (currentUser.name === username) {
-          currentUser.badge = 'admin';
+          currentUser.badge = role;
           localStorage.setItem('instaUser', JSON.stringify(currentUser));
         }
         displayUsers();
-        alert(`${username} est maintenant admin.`);
+        alert(`${username} est maintenant "${role}".`);
       }
     }
 
-    // Supprimer un utilisateur
     function removeUser(username) {
+      if (username === currentUser.name) {
+        if (!confirm("Vous êtes sur le point de supprimer votre propre compte et serez déconnecté. Confirmez-vous ?")) return;
+        localStorage.removeItem('instaUser');
+        delete users[username];
+        localStorage.setItem('instaUsers', JSON.stringify(users));
+        alert("Compte supprimé. Déconnexion en cours.");
+        window.location.href = "index.html";
+        return;
+      }
       if (confirm(`Supprimer le compte de ${username} ?`)) {
         delete users[username];
         localStorage.setItem('instaUsers', JSON.stringify(users));
-
-        // Si l'utilisateur supprimé est l'actuel connecté, déconnexion automatique
-        if (currentUser.name === username) {
-          localStorage.removeItem('instaUser');
-          alert("Vous avez supprimé votre propre compte. Vous allez être déconnecté.");
-          window.location.href = "index.html";
-          return;
-        }
-
         displayUsers();
       }
     }
 
-    // Ajouter un admin manuellement
-    function addAdminManuel() {
-      const newAdmin = document.getElementById('newAdminName').value.trim();
-      if (!newAdmin) {
+    function assignRole() {
+      const username = document.getElementById('userName').value.trim();
+      const role = document.getElementById('roleSelect').value;
+
+      if (!username) {
         alert("Veuillez saisir un nom d'utilisateur.");
         return;
       }
-      if (!users[newAdmin]) {
+      if (!users[username]) {
         alert("Utilisateur non trouvé.");
         return;
       }
-      if (users[newAdmin].badge === 'admin') {
-        alert("Cet utilisateur est déjà admin.");
+      if (users[username].badge === role) {
+        alert(`L'utilisateur ${username} a déjà le rôle "${role}".`);
         return;
       }
-      users[newAdmin].badge = 'admin';
-      localStorage.setItem('instaUsers', JSON.stringify(users));
-
-      if (currentUser.name === newAdmin) {
-        currentUser.badge = 'admin';
-        localStorage.setItem('instaUser', JSON.stringify(currentUser));
-      }
-
-      displayUsers();
-      alert(`${newAdmin} est maintenant admin.`);
-      document.getElementById('newAdminName').value = '';
+      giveRole(username, role);
+      document.getElementById('userName').value = '';
     }
 
-    // Initial display
+    function logout() {
+      localStorage.removeItem('instaUser');
+      alert("Déconnecté avec succès.");
+      window.location.href = "index.html";
+    }
+
     displayUsers();
   </script>
+
 </body>
 </html>
