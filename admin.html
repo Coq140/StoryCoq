@@ -272,25 +272,6 @@
     window.location.href = "index.html";
   }
 
-  // Restreindre page admin aux badge admin
-  if (!currentUser || currentUser.badge !== "admin") {
-    redirectToIndex();
-  }
-
-  function saveUsers() {
-    localStorage.setItem('instaUsers', JSON.stringify(users));
-  }
-  function savePosts() {
-    localStorage.setItem('instaPosts', JSON.stringify(posts));
-  }
-
-  function updateCurrentUserIfNeeded(username) {
-    if (currentUser && currentUser.name === username) {
-      currentUser = { name: username, ...users[username] };
-      localStorage.setItem('instaUser', JSON.stringify(currentUser));
-    }
-  }
-
   // Construire tableau utilisateurs
   function buildUsersTable() {
     const tbody = document.querySelector('#usersTable tbody');
