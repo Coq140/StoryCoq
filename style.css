@@ -130,3 +130,56 @@ main {
   object-fit: cover;
   margin: 5px;
 }
+.badge {
+  padding: 5px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  cursor: default;
+  position: relative;
+  font-size: 16px;
+  color: #fff;
+  margin-right: 5px;
+}
+
+.badge-symbol {
+  margin-right: 5px;
+}
+
+.badge-admin {
+  background: #e74c3c;
+}
+
+.badge-staff {
+  background: #f1c40f;
+  color: #333;
+}
+
+.badge-vip {
+  background: #9b59b6;
+}
+
+.badge-certifie {
+  background: #3498db;
+}
+
+.tooltip {
+  display: none;
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.badge:hover .tooltip {
+  display: block;
+}
+
