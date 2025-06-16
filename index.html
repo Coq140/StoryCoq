@@ -31,6 +31,7 @@
   <h2>Connexion / Inscription</h2>
 
   <input type="text" id="username" placeholder="Nom d'utilisateur" />
+  <!-- Si tu veux ajouter email : <input type="email" id="email" placeholder="Email" /> -->
   <input type="password" id="password" placeholder="Mot de passe" />
 
   <button onclick="login()">Se connecter</button>
@@ -39,9 +40,6 @@
   <p id="message"></p>
 
   <script>
-    // Récupérer tous les utilisateurs stockés en localStorage
-    // Ils sont sauvegardés dans un objet { username: {password, badge, bio, avatar, etc.} }
-
     function getUsers() {
       const users = localStorage.getItem('instaUsers');
       return users ? JSON.parse(users) : {};
@@ -51,14 +49,29 @@
       localStorage.setItem('instaUsers', JSON.stringify(users));
     }
 
+    function showMessage(msg, isError = true) {
+      const messageEl = document.getElementById('message');
+      messageEl.style.color = isError ? 'red' : 'green';
+      messageEl.innerText = msg;
+    }
+
+    function validateFields(username, password) {
+      if (!username) {
+        showMessage("Le nom d'utilisateur est requis.");
+        return false;
+      }
+      if (!password) {
+        showMessage("Le mot de passe est requis.");
+        return false;
+      }
+      return true;
+    }
+
     function login() {
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
 
-      if (!username || !password) {
-        showMessage("Veuillez remplir tous les champs");
-        return;
-      }
+      if (!validateFields(username, password)) return;
 
       const users = getUsers();
 
@@ -68,32 +81,32 @@
       }
 
       if (users[username].password !== password) {
-        showMessage("Mot de passe incorrect");
+        showMessage("Mot de passe incorrect.");
         return;
       }
 
-      // Connexion OK => stocker l'utilisateur actif et rediriger
+      // Connexion réussie : sauvegarder et rediriger
       localStorage.setItem('instaUser', JSON.stringify({ name: username, ...users[username] }));
-      window.location.href = "feed.html";
+      showMessage("Connexion réussie !", false);
+      setTimeout(() => {
+        window.location.href = "feed.html";
+      }, 1000);
     }
 
     function register() {
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
 
-      if (!username || !password) {
-        showMessage("Veuillez remplir tous les champs");
-        return;
-      }
+      if (!validateFields(username, password)) return;
 
       const users = getUsers();
 
       if (users[username]) {
-        showMessage("Ce nom d'utilisateur est déjà pris");
+        showMessage("Ce nom d'utilisateur est déjà pris.");
         return;
       }
 
-      // Créer un nouvel utilisateur sans badge ni info perso
+      // Créer utilisateur
       users[username] = {
         password: password,
         badge: "",
@@ -105,13 +118,12 @@
 
       saveUsers(users);
 
-      // Auto connexion après création de compte
+      // Auto connexion
       localStorage.setItem('instaUser', JSON.stringify({ name: username, ...users[username] }));
-      window.location.href = "feed.html";
-    }
-
-    function showMessage(msg) {
-      document.getElementById('message').innerText = msg;
+      showMessage("Compte créé avec succès !", false);
+      setTimeout(() => {
+        window.location.href = "feed.html";
+      }, 1000);
     }
   </script>
 
