@@ -46,17 +46,7 @@
 </table>
 
 <script>
-  // Chargement utilisateurs et session
-  let users = JSON.parse(localStorage.getItem('instaUsers')) || {};
-  let currentUser = JSON.parse(localStorage.getItem('instaUser'));
 
-  function redirectToIndex() {
-    alert("Accès refusé : page admin réservée aux administrateurs.");
-    window.location.href = "index.html";
-  }
-
-  // Restreindre page admin aux badge admin
-  
   // Construire tableau
   function buildTable() {
     const tbody = document.querySelector('#usersTable tbody');
