@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Connexion / Inscription | InstaClone</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 400px;
+      margin: 40px auto;
+      padding: 10px;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      box-sizing: border-box;
+    }
+    button {
+      cursor: pointer;
+    }
+    #message {
+      color: red;
+      min-height: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Connexion / Inscription</h2>
+
+  <input type="text" id="username" placeholder="Nom d'utilisateur" />
+  <input type="password" id="password" placeholder="Mot de passe" />
+
+  <button onclick="login()">Se connecter</button>
+  <button onclick="register()">Créer un compte</button>
+
+  <p id="message"></p>
+
+  <script>
+    // Récupérer tous les utilisateurs stockés en localStorage
+    // Ils sont sauvegardés dans un objet { username: {password, badge, bio, avatar, etc.} }
+
+    function getUsers() {
+      const users = localStorage.getItem('instaUsers');
+      return users ? JSON.parse(users) : {};
+    }
+
+    function saveUsers(users) {
+      localStorage.setItem('instaUsers', JSON.stringify(users));
+    }
+
+    function login() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!username || !password) {
+        showMessage("Veuillez remplir tous les champs");
+        return;
+      }
+
+      const users = getUsers();
+
+      if (!users[username]) {
+        showMessage("Utilisateur inconnu. Créez un compte.");
+        return;
+      }
+
+      if (users[username].password !== password) {
+        showMessage("Mot de passe incorrect");
+        return;
+      }
+
+      // Connexion OK => stocker l'utilisateur actif et rediriger
+      localStorage.setItem('instaUser', JSON.stringify({ name: username, ...users[username] }));
+      window.location.href = "feed.html";
+    }
+
+    function register() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!username || !password) {
+        showMessage("Veuillez remplir tous les champs");
+        return;
+      }
+
+      const users = getUsers();
+
+      if (users[username]) {
+        showMessage("Ce nom d'utilisateur est déjà pris");
+        return;
+      }
+
+      // Créer un nouvel utilisateur sans badge ni info perso
+      users[username] = {
+        password: password,
+        badge: "",
+        bio: "",
+        avatar: "",
+        banner: "",
+        story: ""
+      };
+
+      saveUsers(users);
+
+      // Auto connexion après création de compte
+      localStorage.setItem('instaUser', JSON.stringify({ name: username, ...users[username] }));
+      window.location.href = "feed.html";
+    }
+
+    function showMessage(msg) {
+      document.getElementById('message').innerText = msg;
+    }
+  </script>
+
+</body>
+</html>

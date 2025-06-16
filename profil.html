@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Profil | InstaClone</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div>InstaClone</div>
+    <nav>
+      <a href="feed.html">Feed</a>
+      <a href="explore.html">Explore</a>
+      <a href="profil.html">Profil</a>
+      <a href="admin.html">Admin</a>
+      <a href="index.html" onclick="logout()">Déconnexion</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="banner" id="banner">
+      <input type="file" accept="image/*" onchange="updateBanner(event)">
+    </div>
+    <div class="profile-section">
+      <img src="default-avatar.png" id="avatar" class="avatar" onclick="document.getElementById('avatarInput').click()">
+      <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="updateAvatar(event)">
+      <h2 id="profilName"></h2>
+      <div id="profilBadge"></div>
+      <textarea id="bio" placeholder="Ajoute ta bio ici..." onchange="saveBio()"></textarea>
+      <div class="story">
+        <label>Story : <input type="file" accept="image/*" onchange="addStory(event)"></label>
+        <div id="storyDisplay"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

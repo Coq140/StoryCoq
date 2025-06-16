@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Feed | InstaClone</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 10px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    nav a {
+      margin: 0 10px;
+      text-decoration: none;
+      color: #333;
+      font-weight: bold;
+    }
+    #newPost {
+      margin: 20px 0;
+    }
+    #newPost textarea {
+      width: 100%;
+      height: 80px;
+      padding: 10px;
+      box-sizing: border-box;
+      resize: vertical;
+      font-size: 14px;
+    }
+    #newPost button {
+      margin-top: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      background: #0095f6;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .post {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 15px;
+      display: flex;
+      gap: 10px;
+    }
+    .post .avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .post-content {
+      flex: 1;
+    }
+    .post-header {
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge {
+      font-size: 14px;
+      color: white;
+      background: #0095f6;
+      padding: 2px 6px;
+      border-radius: 12px;
+    }
+    .post-date {
+      font-size: 12px;
+      color: #555;
+      margin-left: auto;
+    }
+    .post-text {
+      margin-top: 6px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>StoryCoq</h1>
+  <nav>
+    <a href="feed.html">Feed</a>
+    <a href="profil.html">Profil</a>
+    <a href="admin.html">Admin</a>
+    <a href="index.html" onclick="logout()">Déconnexion</a>
+  </nav>
+</header>
+
+<section id="newPost">
+  <textarea id="postContent" placeholder="Quoi de neuf ?"></textarea>
+  <button onclick="addPost()">Publier</button>
+</section>
+
+<section id="postsList">
+  <!-- Les posts apparaîtront ici -->
+</section>
+
+<script>
+  const currentUser = JSON.parse(localStorage.getItem('instaUser'));
+  if (!currentUser) {
+    alert("Tu n'es pas connecté.e. Redirection...");
+    window.location.href = "index.html";
+  }
+
+  function getPosts() {
+    const posts = localStorage.getItem('StoryCoq');
+    return posts ? JSON.parse(posts) : [];
+  }
+
+  function savePosts(posts) {
+    localStorage.setItem('StoryCoq', JSON.stringify(posts));
+  }
+
+  function displayPosts() {
+    const postsList = document.getElementById('postsList');
+    postsList.innerHTML = '';
+    const posts = getPosts();
+
+    posts.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    for (const post of posts) {
+      const postElem = document.createElement('article');
+      postElem.classList.add('post');
+
+      const avatar = document.createElement('img');
+      avatar.classList.add('avatar');
+      avatar.src = post.avatar || 'default-avatar.png';
+      avatar.alt = "Avatar";
+
+      const content = document.createElement('div');
+      content.classList.add('post-content');
+
+      const header = document.createElement('div');
+      header.classList.add('post-header');
+
+      const name = document.createElement('span');
+      name.textContent = post.name;
+
+      const badge = document.createElement('span');
+      badge.classList.add('badge');
+      if (post.badge && post.badge.trim() !== "") {
+        badge.textContent = post.badge;
+      } else {
+        badge.style.display = 'none';
+      }
+
+      const dateSpan = document.createElement('span');
+      dateSpan.classList.add('post-date');
+      const date = new Date(post.date);
+      dateSpan.textContent = date.toLocaleString();
+
+      header.appendChild(name);
+      header.appendChild(badge);
+      header.appendChild(dateSpan);
+
+      const bio = document.createElement('div');
+      bio.style.fontSize = '12px';
+      bio.style.color = '#555';
+      bio.textContent = post.bio || '';
+
+      const text = document.createElement('div');
+      text.classList.add('post-text');
+      text.textContent = post.content;
+
+      content.appendChild(header);
+      content.appendChild(bio);
+      content.appendChild(text);
+
+      postElem.appendChild(avatar);
+      postElem.appendChild(content);
+
+      postsList.appendChild(postElem);
+    }
+  }
+
+  function addPost() {
+    const content = document.getElementById('postContent').value.trim();
+    if (!content) {
+      alert("Le message est vide !");
+      return;
+    }
+
+    const posts = getPosts();
+
+    const newPost = {
+      name: currentUser.name,
+      badge: currentUser.badge,
+      avatar: currentUser.avatar,
+      bio: currentUser.bio,
+      content: content,
+      date: new Date().toISOString()
+    };
+
+    posts.push(newPost);
+    savePosts(posts);
+    document.getElementById('postContent').value = '';
+    displayPosts();
+  }
+
+  function logout() {
+    localStorage.removeItem('instaUser');
+  }
+
+  displayPosts();
+</script>
+
+</body>
+</html>
