@@ -2,166 +2,219 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Panel Admin sécurisé</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin - Gestion utilisateurs avancée</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 700px; margin: auto; padding: 20px; background: #f0f0f0; }
-    h1 { text-align: center; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { padding: 8px; border: 1px solid #ccc; text-align: left; }
-    button { padding: 5px 10px; margin: 2px; cursor: pointer; }
-    input, select { padding: 5px; margin: 5px 0; width: 100%; }
-    #addRoleForm { margin-top: 20px; background: #fff; padding: 10px; border-radius: 8px; box-shadow: 0 0 8px rgba(0,0,0,0.1); }
-    .password-hidden { font-family: monospace; }
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; padding: 10px;}
+    table {width: 100%; border-collapse: collapse; margin-top: 15px;}
+    th, td {border: 1px solid #aaa; padding: 8px; text-align: left;}
+    th {background-color: #ddd;}
+    input[type="text"], select {width: 100%; padding: 5px; box-sizing: border-box;}
+    button {margin-top: 10px; padding: 8px 12px; cursor: pointer; background: #0095f6; color: white; border: none; border-radius: 4px; font-weight: bold;}
+    nav a {margin-right: 10px; text-decoration: none; font-weight: bold; color: #333;}
   </style>
 </head>
 <body>
 
-  <h1>Panel Admin sécurisé</h1>
+<header>
+  <h1>Admin - Gestion des utilisateurs</h1>
+  <nav>
+    <a href="feed.html">Feed</a>
+    <a href="profil.html">Profil</a>
+    <a href="index.html" onclick="logout()">Déconnexion</a>
+  </nav>
+</header>
 
-  <button onclick="logout()" style="float:right; margin-bottom: 10px;">Déconnexion</button>
+<div id="message"></div>
 
-  <div id="addRoleForm">
-    <h3>Attribuer un rôle à un utilisateur</h3>
-    <input type="text" id="userName" placeholder="Nom d'utilisateur" />
-    <select id="roleSelect">
-      <option value="user">Utilisateur (user)</option>
-      <option value="admin">Administrateur (admin)</option>
-      <option value="entreprise">Entreprise</option>
-      <option value="certifie">Certifié</option>
-    </select>
-    <button onclick="assignRole()">Attribuer le rôle</button>
-  </div>
+<table id="usersTable">
+  <thead>
+    <tr>
+      <th>Nom d'utilisateur</th>
+      <th>Badge</th>
+      <th>Entreprise affiliée</th>
+      <th>Bio</th>
+      <th>Avatar URL</th>
+      <th>Bannière URL</th>
+      <th>Story</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Utilisateurs listés ici -->
+  </tbody>
+</table>
 
-  <h2>Liste des utilisateurs</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Nom</th>
-        <th>Rôle</th>
-        <th>Mot de passe</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody id="usersTableBody"></tbody>
-  </table>
+<script>
+  let users = JSON.parse(localStorage.getItem('instaUsers')) || {};
+  let currentUser = JSON.parse(localStorage.getItem('instaUser'));
 
-  <script>
-    let currentUser = JSON.parse(localStorage.getItem('instaUser'));
-    let users = JSON.parse(localStorage.getItem('instaUsers')) || {};
+  function redirectToIndex() {
+    alert("Accès refusé : page admin réservée aux administrateurs.");
+    window.location.href = "index.html";
+  }
 
-    if (currentUser && users[currentUser.name]) {
-      currentUser = { name: currentUser.name, ...users[currentUser.name] };
+  // Vérification que seul un admin peut accéder
+  if (!currentUser || currentUser.badge !== "admin") {
+    redirectToIndex();
+  }
+
+  function saveUsers() {
+    localStorage.setItem('instaUsers', JSON.stringify(users));
+  }
+
+  function updateCurrentUserIfNeeded(username) {
+    if (currentUser && currentUser.name === username) {
+      currentUser = { name: username, ...users[username] };
       localStorage.setItem('instaUser', JSON.stringify(currentUser));
     }
+  }
 
-    if (!currentUser || currentUser.badge !== 'admin') {
-      alert("Accès refusé : page réservée aux administrateurs.");
-      window.location.href = "index.html";
-    }
+  function buildTable() {
+    const tbody = document.querySelector('#usersTable tbody');
+    tbody.innerHTML = '';
 
-    function displayUsers() {
-      const tbody = document.getElementById('usersTableBody');
-      tbody.innerHTML = '';
-      Object.keys(users).forEach(username => {
-        const user = users[username];
-        const role = user.badge || 'user';
+    for (const username in users) {
+      const user = users[username];
+      const tr = document.createElement('tr');
 
-        const tr = document.createElement('tr');
+      // Nom
+      const tdName = document.createElement('td');
+      tdName.textContent = username;
+      tr.appendChild(tdName);
 
-        // Mot de passe masqué par défaut avec bouton pour afficher/cacher
-        const pwdId = `pwd_${username}`;
-        const btnId = `btn_${username}`;
-
-        tr.innerHTML = `
-          <td>${username}</td>
-          <td>${role}</td>
-          <td>
-            <span id="${pwdId}" class="password-hidden">${'*'.repeat(user.password ? user.password.length : 8)}</span>
-            <button id="${btnId}" onclick="togglePassword('${username}')">Voir</button>
-          </td>
-          <td>
-            ${role !== 'admin' ? `<button onclick="giveRole('${username}', 'admin')">Donner Admin</button>` : ''}
-            <button onclick="removeUser('${username}')">Supprimer</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
+      // Badge
+      const tdBadge = document.createElement('td');
+      const selectBadge = document.createElement('select');
+      const badges = ["", "certifie", "entreprise", "admin"];
+      badges.forEach(b => {
+        const option = document.createElement('option');
+        option.value = b;
+        option.textContent = b === "" ? "(aucun)" : b;
+        if (user.badge === b) option.selected = true;
+        selectBadge.appendChild(option);
       });
-    }
+      tdBadge.appendChild(selectBadge);
+      tr.appendChild(tdBadge);
 
-    function togglePassword(username) {
-      const pwdSpan = document.getElementById(`pwd_${username}`);
-      const btn = document.getElementById(`btn_${username}`);
-      if (pwdSpan.textContent.startsWith('*')) {
-        pwdSpan.textContent = users[username].password || '(aucun)';
-        btn.textContent = 'Cacher';
-      } else {
-        pwdSpan.textContent = '*'.repeat(users[username].password ? users[username].password.length : 8);
-        btn.textContent = 'Voir';
+      // Entreprise affiliée (input activé seulement si badge = entreprise)
+      const tdEntreprise = document.createElement('td');
+      const inputEntreprise = document.createElement('input');
+      inputEntreprise.type = 'text';
+      inputEntreprise.placeholder = "Nom compte affilié";
+      inputEntreprise.value = user.entrepriseAffiliee || "";
+      if (user.badge !== "entreprise") {
+        inputEntreprise.disabled = true;
+        inputEntreprise.style.backgroundColor = "#eee";
       }
-    }
+      tdEntreprise.appendChild(inputEntreprise);
+      tr.appendChild(tdEntreprise);
 
-    function giveRole(username, role) {
-      if (!users[username]) {
-        alert("Utilisateur introuvable.");
-        return;
-      }
-      if (confirm(`Attribuer le rôle "${role}" à ${username} ?`)) {
-        users[username].badge = role;
-        localStorage.setItem('instaUsers', JSON.stringify(users));
-        if (currentUser.name === username) {
-          currentUser.badge = role;
-          localStorage.setItem('instaUser', JSON.stringify(currentUser));
+      // Bio
+      const tdBio = document.createElement('td');
+      const inputBio = document.createElement('input');
+      inputBio.type = 'text';
+      inputBio.value = user.bio || "";
+      tdBio.appendChild(inputBio);
+      tr.appendChild(tdBio);
+
+      // Avatar URL
+      const tdAvatar = document.createElement('td');
+      const inputAvatar = document.createElement('input');
+      inputAvatar.type = 'text';
+      inputAvatar.value = user.avatar || "";
+      tdAvatar.appendChild(inputAvatar);
+      tr.appendChild(tdAvatar);
+
+      // Bannière URL
+      const tdBanner = document.createElement('td');
+      const inputBanner = document.createElement('input');
+      inputBanner.type = 'text';
+      inputBanner.value = user.banner || "";
+      tdBanner.appendChild(inputBanner);
+      tr.appendChild(tdBanner);
+
+      // Story
+      const tdStory = document.createElement('td');
+      const inputStory = document.createElement('input');
+      inputStory.type = 'text';
+      inputStory.value = user.story || "";
+      tdStory.appendChild(inputStory);
+      tr.appendChild(tdStory);
+
+      // Actions
+      const tdActions = document.createElement('td');
+      const btnSave = document.createElement('button');
+      btnSave.textContent = "Sauvegarder";
+      btnSave.onclick = () => {
+        const badgeSelected = selectBadge.value;
+        users[username].badge = badgeSelected;
+        users[username].bio = inputBio.value.trim();
+        users[username].avatar = inputAvatar.value.trim() || "default-avatar.png";
+        users[username].banner = inputBanner.value.trim();
+        users[username].story = inputStory.value.trim();
+
+        // Gestion entreprise affiliée
+        if (badgeSelected === "entreprise") {
+          const affilié = inputEntreprise.value.trim();
+          if (affilié && users[affilié]) {
+            users[username].entrepriseAffiliee = affilié;
+          } else {
+            alert("Le compte affilié n'existe pas. Laissez vide ou mettez un compte valide.");
+            users[username].entrepriseAffiliee = "";
+            inputEntreprise.value = "";
+          }
+        } else {
+          users[username].entrepriseAffiliee = "";
+          inputEntreprise.value = "";
         }
-        displayUsers();
-        alert(`${username} est maintenant "${role}".`);
+
+        saveUsers();
+        updateCurrentUserIfNeeded(username);
+        alert(`Utilisateur "${username}" mis à jour !`);
+        buildTable();
+      };
+      tdActions.appendChild(btnSave);
+
+      // Supprimer un utilisateur (bouton accessible uniquement aux admins)
+      if (currentUser.badge === "admin" && username !== currentUser.name) {
+        const btnDelete = document.createElement('button');
+        btnDelete.textContent = "Supprimer";
+        btnDelete.style.marginLeft = "8px";
+        btnDelete.onclick = () => {
+          if (confirm(`Supprimer l'utilisateur "${username}" ?`)) {
+            delete users[username];
+            saveUsers();
+            buildTable();
+          }
+        };
+        tdActions.appendChild(btnDelete);
       }
+
+      tr.appendChild(tdActions);
+
+      // Activation/désactivation input affiliation selon badge sélectionné
+      selectBadge.onchange = () => {
+        if (selectBadge.value === "entreprise") {
+          inputEntreprise.disabled = false;
+          inputEntreprise.style.backgroundColor = "";
+        } else {
+          inputEntreprise.disabled = true;
+          inputEntreprise.value = "";
+          inputEntreprise.style.backgroundColor = "#eee";
+        }
+      };
+
+      tbody.appendChild(tr);
     }
+  }
 
-    function removeUser(username) {
-      if (username === currentUser.name) {
-        if (!confirm("Vous êtes sur le point de supprimer votre propre compte et serez déconnecté. Confirmez-vous ?")) return;
-        localStorage.removeItem('instaUser');
-        delete users[username];
-        localStorage.setItem('instaUsers', JSON.stringify(users));
-        alert("Compte supprimé. Déconnexion en cours.");
-        window.location.href = "index.html";
-        return;
-      }
-      if (confirm(`Supprimer le compte de ${username} ?`)) {
-        delete users[username];
-        localStorage.setItem('instaUsers', JSON.stringify(users));
-        displayUsers();
-      }
-    }
+  function logout() {
+    localStorage.removeItem('instaUser');
+  }
 
-    function assignRole() {
-      const username = document.getElementById('userName').value.trim();
-      const role = document.getElementById('roleSelect').value;
-
-      if (!username) {
-        alert("Veuillez saisir un nom d'utilisateur.");
-        return;
-      }
-      if (!users[username]) {
-        alert("Utilisateur non trouvé.");
-        return;
-      }
-      if (users[username].badge === role) {
-        alert(`L'utilisateur ${username} a déjà le rôle "${role}".`);
-        return;
-      }
-      giveRole(username, role);
-      document.getElementById('userName').value = '';
-    }
-
-    function logout() {
-      localStorage.removeItem('instaUser');
-      alert("Déconnecté avec succès.");
-      window.location.href = "index.html";
-    }
-
-    displayUsers();
-  </script>
+  buildTable();
+</script>
 
 </body>
 </html>
