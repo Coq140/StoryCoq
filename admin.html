@@ -1,27 +1,27 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin Panel | InstaClone</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #fafafa; padding: 20px; }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background: #333; color: white; }
-    button { padding: 5px 10px; margin: 0 3px; }
-    .badge {
-      font-size: 18px;
-      margin-right: 5px;
-    }
-    .logo {
-      width: 30px;
-      height: 30px;
-      vertical-align: middle;
-      border-radius: 3px;
-      margin-right: 5px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admin Panel | InstaClone</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #fafafa; padding: 20px; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+  th { background: #333; color: white; }
+  button { padding: 5px 10px; margin: 0 3px; }
+  .badge {
+    font-size: 18px;
+    margin-right: 5px;
+  }
+  .logo {
+    width: 30px;
+    height: 30px;
+    vertical-align: middle;
+    border-radius: 3px;
+    margin-right: 5px;
+  }
+</style>
 </head>
 <body>
 
@@ -47,48 +47,46 @@ const entreprises = {
   'TechInc': { name: "Tech Incorporated", logo: "logos/techinc.png" },
 };
 
-// Injecte des utilisateurs d'exemple si localStorage est vide
-if(!localStorage.getItem('instaUsers')){
-  const sampleUsers = [
-    { name: "Alice", badges: ["admin"], affiliateWith: "AcmeCorp" },
-    { name: "Bob", badges: ["vip"], affiliateWith: "TechInc" },
-    { name: "Charlie", badges: [] }
-  ];
-  localStorage.setItem('instaUsers', JSON.stringify(sampleUsers));
-}
-
-let users = JSON.parse(localStorage.getItem('instaUsers'));
-
-// Injecte un utilisateur admin connecté si aucun instaUser
-if(!localStorage.getItem('instaUser')){
-  localStorage.setItem('instaUser', JSON.stringify({ name: "Alice", badges: ["admin"] }));
-}
-
-const currentUser = JSON.parse(localStorage.getItem('instaUser'));
-
-// Vérification admin
-if(!currentUser || !currentUser.badges || !currentUser.badges.includes('admin')){
+// Simuler un utilisateur admin connecté (à remplacer par ta vraie gestion)
+const currentUser = { name: "Admin", badges: ["admin"] };
+if(!currentUser.badges.includes('admin')) {
   alert("Accès refusé : vous devez être admin.");
   window.location.href = "index.html";
 }
 
-function renderUsers(){
-  console.log("Rendering users:", users);
+let users = [];
+
+// Récupérer les utilisateurs depuis l'API
+async function fetchUsers() {
+  try {
+    const res = await fetch('/api/users');
+    if (!res.ok) throw new Error("Erreur chargement utilisateurs");
+    users = await res.json();
+    renderUsers();
+  } catch(err) {
+    alert(err.message);
+  }
+}
+
+// Mettre à jour un utilisateur sur l'API
+async function updateUser(user) {
+  try {
+    const res = await fetch('/api/users/' + user.id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user)
+    });
+    if (!res.ok) throw new Error("Erreur mise à jour utilisateur");
+    alert(`Affiliation mise à jour pour ${user.name}`);
+  } catch(err) {
+    alert(err.message);
+  }
+}
+
+function renderUsers() {
   const tbody = document.querySelector('#usersTable tbody');
   tbody.innerHTML = '';
-
-  if(users.length === 0){
-    const tr = document.createElement('tr');
-    const td = document.createElement('td');
-    td.colSpan = 4;
-    td.style.textAlign = 'center';
-    td.textContent = 'Aucun utilisateur trouvé.';
-    tr.appendChild(td);
-    tbody.appendChild(tr);
-    return;
-  }
-
-  users.forEach((user) => {
+  users.forEach(user => {
     const tr = document.createElement('tr');
 
     // Nom
@@ -98,22 +96,22 @@ function renderUsers(){
 
     // Badges
     const tdBadges = document.createElement('td');
-    if(user.badges){
-      user.badges.forEach(badge => {
+    if(user.badges) {
+      user.badges.forEach(b => {
         const span = document.createElement('span');
         span.className = 'badge';
-        if(badge === 'admin') span.textContent = '🛡️';
-        else if(badge === 'staff') span.textContent = '⭐';
-        else if(badge === 'vip') span.textContent = '💎';
-        else span.textContent = badge;
+        if(b === 'admin') span.textContent = '🛡️';
+        else if(b === 'staff') span.textContent = '⭐';
+        else if(b === 'vip') span.textContent = '💎';
+        else span.textContent = b;
         tdBadges.appendChild(span);
       });
     }
     tr.appendChild(tdBadges);
 
-    // Affilié à
+    // Affilié à (logo + nom)
     const tdAffiliate = document.createElement('td');
-    if(user.affiliateWith && entreprises[user.affiliateWith]){
+    if(user.affiliateWith && entreprises[user.affiliateWith]) {
       const img = document.createElement('img');
       img.src = entreprises[user.affiliateWith].logo;
       img.alt = entreprises[user.affiliateWith].name;
@@ -129,31 +127,28 @@ function renderUsers(){
     // Actions
     const tdActions = document.createElement('td');
 
-    // Sélecteur d’affiliation
+    // Sélecteur d'entreprise affiliation
     const select = document.createElement('select');
-
     const optionNone = document.createElement('option');
     optionNone.value = '';
     optionNone.textContent = 'Aucune';
     select.appendChild(optionNone);
-
     Object.keys(entreprises).forEach(key => {
-      const option = document.createElement('option');
-      option.value = key;
-      option.textContent = entreprises[key].name;
-      if(user.affiliateWith === key) option.selected = true;
-      select.appendChild(option);
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = entreprises[key].name;
+      if(user.affiliateWith === key) opt.selected = true;
+      select.appendChild(opt);
     });
     tdActions.appendChild(select);
 
     // Bouton sauvegarder
     const saveBtn = document.createElement('button');
     saveBtn.textContent = 'Sauvegarder';
-    saveBtn.onclick = () => {
+    saveBtn.onclick = async () => {
       user.affiliateWith = select.value || null;
-      saveUsers();
-      renderUsers();
-      alert(`Affiliation mise à jour pour ${user.name}`);
+      await updateUser(user);
+      await fetchUsers();
     };
     tdActions.appendChild(saveBtn);
 
@@ -163,17 +158,14 @@ function renderUsers(){
   });
 }
 
-function saveUsers(){
-  localStorage.setItem('instaUsers', JSON.stringify(users));
-}
-
-function logout(){
-  localStorage.removeItem('instaUser');
+function logout() {
+  // Ici tu peux ajouter la suppression de token/session
+  alert("Déconnexion");
   window.location.href = "index.html";
 }
 
-// Affiche la liste au chargement
-renderUsers();
+// Au chargement, on récupère les utilisateurs
+fetchUsers();
 
 </script>
 
