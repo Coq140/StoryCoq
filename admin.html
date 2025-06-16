@@ -3,34 +3,26 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Admin Panel | InstaClone</title>
+<title>Admin Panel Simple</title>
 <style>
-  body { font-family: Arial, sans-serif; background: #fafafa; padding: 20px; }
+  body { font-family: Arial, sans-serif; padding: 20px; background: #fafafa; }
   table { border-collapse: collapse; width: 100%; }
   th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
   th { background: #333; color: white; }
-  button { padding: 5px 10px; margin: 0 3px; }
-  .badge {
-    font-size: 18px;
-    margin-right: 5px;
-  }
-  .logo {
-    width: 30px;
-    height: 30px;
-    vertical-align: middle;
-    border-radius: 3px;
-    margin-right: 5px;
-  }
+  .badge { font-size: 18px; margin-right: 5px; }
+  .logo { width: 30px; height: 30px; vertical-align: middle; border-radius: 3px; margin-right: 5px; }
+  button { cursor: pointer; padding: 5px 10px; margin: 0 3px; }
 </style>
 </head>
 <body>
 
-<h1>Panel Admin</h1>
+<h1>Panel Admin Simple</h1>
 
 <table id="usersTable">
   <thead>
     <tr>
       <th>Utilisateur</th>
+      <th>Mot de passe</th>
       <th>Badges</th>
       <th>Affilié à</th>
       <th>Actions</th>
@@ -39,53 +31,27 @@
   <tbody></tbody>
 </table>
 
-<button onclick="logout()">Déconnexion</button>
-
 <script>
 const entreprises = {
-  'AcmeCorp': { name: "Acme Corporation", logo: "logos/acmecorp.png" },
-  'TechInc': { name: "Tech Incorporated", logo: "logos/techinc.png" },
+  'AcmeCorp': { name: "Acme Corporation", logo: "https://via.placeholder.com/30?text=A" },
+  'TechInc': { name: "Tech Incorporated", logo: "https://via.placeholder.com/30?text=T" }
 };
 
-// Simuler un utilisateur admin connecté (à remplacer par ta vraie gestion)
-const currentUser = { name: "Admin", badges: ["admin"] };
-if(!currentUser.badges.includes('admin')) {
-  alert("Accès refusé : vous devez être admin.");
-  window.location.href = "index.html";
+// Chargement utilisateurs depuis localStorage ou initialisation par défaut
+let users = JSON.parse(localStorage.getItem('users')) || [
+  { id: 1, name: "Alice", password: "alice123", badges: ["admin", "vip"], affiliateWith: "AcmeCorp" },
+  { id: 2, name: "Bob", password: "bob456", badges: ["staff"], affiliateWith: "TechInc" },
+  { id: 3, name: "Charlie", password: "charlie789", badges: [], affiliateWith: null }
+];
+
+function saveUsers(){
+  localStorage.setItem('users', JSON.stringify(users));
 }
 
-let users = [];
-
-// Récupérer les utilisateurs depuis l'API
-async function fetchUsers() {
-  try {
-    const res = await fetch('/api/users');
-    if (!res.ok) throw new Error("Erreur chargement utilisateurs");
-    users = await res.json();
-    renderUsers();
-  } catch(err) {
-    alert(err.message);
-  }
-}
-
-// Mettre à jour un utilisateur sur l'API
-async function updateUser(user) {
-  try {
-    const res = await fetch('/api/users/' + user.id, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(user)
-    });
-    if (!res.ok) throw new Error("Erreur mise à jour utilisateur");
-    alert(`Affiliation mise à jour pour ${user.name}`);
-  } catch(err) {
-    alert(err.message);
-  }
-}
-
-function renderUsers() {
+function renderUsers(){
   const tbody = document.querySelector('#usersTable tbody');
   tbody.innerHTML = '';
+
   users.forEach(user => {
     const tr = document.createElement('tr');
 
@@ -94,9 +60,14 @@ function renderUsers() {
     tdName.textContent = user.name;
     tr.appendChild(tdName);
 
+    // Mot de passe (affichage simple)
+    const tdPwd = document.createElement('td');
+    tdPwd.textContent = user.password;
+    tr.appendChild(tdPwd);
+
     // Badges
     const tdBadges = document.createElement('td');
-    if(user.badges) {
+    if(user.badges && user.badges.length > 0){
       user.badges.forEach(b => {
         const span = document.createElement('span');
         span.className = 'badge';
@@ -106,12 +77,14 @@ function renderUsers() {
         else span.textContent = b;
         tdBadges.appendChild(span);
       });
+    } else {
+      tdBadges.textContent = '—';
     }
     tr.appendChild(tdBadges);
 
-    // Affilié à (logo + nom)
+    // Affilié à
     const tdAffiliate = document.createElement('td');
-    if(user.affiliateWith && entreprises[user.affiliateWith]) {
+    if(user.affiliateWith && entreprises[user.affiliateWith]){
       const img = document.createElement('img');
       img.src = entreprises[user.affiliateWith].logo;
       img.alt = entreprises[user.affiliateWith].name;
@@ -124,49 +97,25 @@ function renderUsers() {
     }
     tr.appendChild(tdAffiliate);
 
-    // Actions
+    // Actions : bouton supprimer
     const tdActions = document.createElement('td');
-
-    // Sélecteur d'entreprise affiliation
-    const select = document.createElement('select');
-    const optionNone = document.createElement('option');
-    optionNone.value = '';
-    optionNone.textContent = 'Aucune';
-    select.appendChild(optionNone);
-    Object.keys(entreprises).forEach(key => {
-      const opt = document.createElement('option');
-      opt.value = key;
-      opt.textContent = entreprises[key].name;
-      if(user.affiliateWith === key) opt.selected = true;
-      select.appendChild(opt);
-    });
-    tdActions.appendChild(select);
-
-    // Bouton sauvegarder
-    const saveBtn = document.createElement('button');
-    saveBtn.textContent = 'Sauvegarder';
-    saveBtn.onclick = async () => {
-      user.affiliateWith = select.value || null;
-      await updateUser(user);
-      await fetchUsers();
+    const btnDel = document.createElement('button');
+    btnDel.textContent = "Supprimer";
+    btnDel.onclick = () => {
+      if(confirm(`Supprimer le compte de ${user.name} ?`)){
+        users = users.filter(u => u.id !== user.id);
+        saveUsers();
+        renderUsers();
+      }
     };
-    tdActions.appendChild(saveBtn);
-
+    tdActions.appendChild(btnDel);
     tr.appendChild(tdActions);
 
     tbody.appendChild(tr);
   });
 }
 
-function logout() {
-  // Ici tu peux ajouter la suppression de token/session
-  alert("Déconnexion");
-  window.location.href = "index.html";
-}
-
-// Au chargement, on récupère les utilisateurs
-fetchUsers();
-
+renderUsers();
 </script>
 
 </body>
