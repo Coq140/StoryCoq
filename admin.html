@@ -56,21 +56,7 @@
   }
 
   // Restreindre page admin aux badge admin
-  if (!currentUser || currentUser.badge !== "admin") {
-    redirectToIndex();
-  }
-
-  function saveUsers() {
-    localStorage.setItem('instaUsers', JSON.stringify(users));
-  }
-
-  function updateCurrentUserIfNeeded(username) {
-    if (currentUser && currentUser.name === username) {
-      currentUser = { name: username, ...users[username] };
-      localStorage.setItem('instaUser', JSON.stringify(currentUser));
-    }
-  }
-
+  
   // Construire tableau
   function buildTable() {
     const tbody = document.querySelector('#usersTable tbody');
