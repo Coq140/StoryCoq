@@ -11,7 +11,10 @@
     th {background-color: #ddd;}
     input[type="text"], select {width: 100%; padding: 5px; box-sizing: border-box;}
     button {margin-top: 10px; padding: 8px 12px; cursor: pointer; background: #0095f6; color: white; border: none; border-radius: 4px; font-weight: bold;}
+    button.delete {background: #d9534f;}
+    button.delete:hover {background: #c9302c;}
     nav a {margin-right: 10px; text-decoration: none; font-weight: bold; color: #333;}
+    nav a:hover {text-decoration: underline;}
   </style>
 </head>
 <body>
@@ -46,6 +49,9 @@
 </table>
 
 <script>
+  // Liste complète des badges possibles, modifie ici pour ajouter ou retirer
+  const badges = ["", "certifie", "entreprise", "admin", "vip", "moderateur", "partner"];
+
   let users = JSON.parse(localStorage.getItem('instaUsers')) || {};
   let currentUser = JSON.parse(localStorage.getItem('instaUser'));
 
@@ -83,14 +89,13 @@
       tdName.textContent = username;
       tr.appendChild(tdName);
 
-      // Badge
+      // Badge (select)
       const tdBadge = document.createElement('td');
       const selectBadge = document.createElement('select');
-      const badges = ["", "certifie", "entreprise", "admin"];
       badges.forEach(b => {
         const option = document.createElement('option');
         option.value = b;
-        option.textContent = b === "" ? "(aucun)" : b;
+        option.textContent = b === "" ? "(aucun)" : b.charAt(0).toUpperCase() + b.slice(1);
         if (user.badge === b) option.selected = true;
         selectBadge.appendChild(option);
       });
@@ -144,6 +149,8 @@
 
       // Actions
       const tdActions = document.createElement('td');
+
+      // Bouton sauvegarder
       const btnSave = document.createElement('button');
       btnSave.textContent = "Sauvegarder";
       btnSave.onclick = () => {
@@ -159,10 +166,12 @@
           const affilié = inputEntreprise.value.trim();
           if (affilié && users[affilié]) {
             users[username].entrepriseAffiliee = affilié;
-          } else {
+          } else if (affilié) {
             alert("Le compte affilié n'existe pas. Laissez vide ou mettez un compte valide.");
             users[username].entrepriseAffiliee = "";
             inputEntreprise.value = "";
+          } else {
+            users[username].entrepriseAffiliee = "";
           }
         } else {
           users[username].entrepriseAffiliee = "";
@@ -176,10 +185,11 @@
       };
       tdActions.appendChild(btnSave);
 
-      // Supprimer un utilisateur (bouton accessible uniquement aux admins)
+      // Bouton supprimer (si ce n’est pas soi-même)
       if (currentUser.badge === "admin" && username !== currentUser.name) {
         const btnDelete = document.createElement('button');
         btnDelete.textContent = "Supprimer";
+        btnDelete.className = "delete";
         btnDelete.style.marginLeft = "8px";
         btnDelete.onclick = () => {
           if (confirm(`Supprimer l'utilisateur "${username}" ?`)) {
