@@ -15,6 +15,31 @@
   </style>
 </head>
 <body>
+  // Chargement utilisateurs et session
+  
+  let users = JSON.parse(localStorage.getItem('instaUsers')) || {};
+  let currentUser = JSON.parse(localStorage.getItem('instaUser'));
+
+  function redirectToIndex() {
+    alert("Accès refusé : page admin réservée aux administrateurs.");
+    window.location.href = "index.html";
+  }
+
+  // Restreindre page admin aux badge admin
+  if (!currentUser || currentUser.badge !== "admin") {
+    redirectToIndex();
+  }
+
+  function saveUsers() {
+    localStorage.setItem('instaUsers', JSON.stringify(users));
+  }
+
+  function updateCurrentUserIfNeeded(username) {
+    if (currentUser && currentUser.name === username) {
+      currentUser = { name: username, ...users[username] };
+      localStorage.setItem('instaUser', JSON.stringify(currentUser));
+    }
+  }
 
 <header>
   <h1>Admin - Gestion des utilisateurs</h1>
