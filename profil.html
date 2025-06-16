@@ -68,6 +68,18 @@
       margin-top: 5px;
       border-radius: 4px;
     }
+    /* Style badge */
+    #profilBadge {
+      margin-bottom: 15px;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #profilBadge img {
+      height: 24px;
+      vertical-align: middle;
+    }
   </style>
 </head>
 <body>
@@ -85,7 +97,7 @@
     <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="updateAvatar(event)">
 
     <h2 id="profilName"></h2>
-    <div id="profilBadge" style="margin-bottom:10px;"></div>
+    <div id="profilBadge"></div>
 
     <textarea id="bio" placeholder="Ajoute ta bio ici..." onchange="saveBio()"></textarea>
 
@@ -101,118 +113,134 @@
 </div>
 
 <script>
-let currentUser = JSON.parse(localStorage.getItem('instaUser'));
+  let currentUser = JSON.parse(localStorage.getItem('instaUser'));
 
-if (!currentUser) {
-  alert("Vous devez être connecté !");
-  window.location.href = "index.html";
-}
-
-// Charger avatar sauvegardé
-if(currentUser.avatar){
-  document.getElementById('avatar').src = currentUser.avatar;
-}
-
-// Charger bannière sauvegardée
-if(currentUser.banner){
-  const banner = document.getElementById('banner');
-  banner.style.backgroundImage = `url(${currentUser.banner})`;
-  banner.style.backgroundSize = 'cover';
-  banner.style.backgroundPosition = 'center';
-}
-
-// Afficher nom et badge
-document.getElementById('profilName').innerText = currentUser.name;
-document.getElementById('profilBadge').innerText = currentUser.badge ? `Badge : ${currentUser.badge}` : '';
-
-// Afficher bio si existante
-document.getElementById('bio').value = currentUser.bio || '';
-
-// Afficher stories si existantes
-if(currentUser.stories && currentUser.stories.length > 0){
-  const storyDisplay = document.getElementById('storyDisplay');
-  currentUser.stories.forEach(story => {
-    const img = document.createElement('img');
-    img.src = story;
-    storyDisplay.appendChild(img);
-  });
-}
-
-// Générer le menu dynamique
-const sidebar = document.getElementById('sidebar');
-sidebar.innerHTML = `
-  <a href="feed.html">🏠 Feed</a>
-  <a href="explore.html">🔍 Explore</a>
-  <a href="profil.html">👤 Profil</a>
-  ${currentUser.badge === 'admin' ? '<a href="admin.html">⚙️ Admin</a>' : ''}
-  <a href="#" onclick="logout()">🚪 Déconnexion</a>
-`;
-
-// Fonction de sauvegarde utilisateur dans localStorage
-function saveUser(){
-  localStorage.setItem('instaUser', JSON.stringify(currentUser));
-}
-
-// Mise à jour avatar
-function updateAvatar(event){
-  const file = event.target.files[0];
-  if(file){
-    const reader = new FileReader();
-    reader.onload = e => {
-      document.getElementById('avatar').src = e.target.result;
-      currentUser.avatar = e.target.result;
-      saveUser();
-    };
-    reader.readAsDataURL(file);
+  if (!currentUser) {
+    alert("Vous devez être connecté !");
+    window.location.href = "index.html";
   }
-}
 
-// Mise à jour bannière
-function updateBanner(event){
-  const file = event.target.files[0];
-  if(file){
-    const reader = new FileReader();
-    reader.onload = e => {
-      const banner = document.getElementById('banner');
-      banner.style.backgroundImage = `url(${e.target.result})`;
-      banner.style.backgroundSize = 'cover';
-      banner.style.backgroundPosition = 'center';
-      banner.innerHTML = ''; // enlever le texte
-      currentUser.banner = e.target.result;
-      saveUser();
-    };
-    reader.readAsDataURL(file);
+  // Dictionnaire des badges (clé => emoji ou image HTML)
+  const badges = {
+    admin: '🛡️',
+    staff: '⭐',
+    entreprise: '<img src="logos/entreprise-logo.png" alt="Entreprise" title="Compte affilié à une entreprise">',
+    vip: '💎',
+    // tu peux ajouter d'autres badges ici
+  };
+
+  // Fonction pour retourner le HTML du badge
+  function getBadgeHTML(badgeKey) {
+    if (!badgeKey) return '';
+    return badges[badgeKey] || badgeKey;
   }
-}
 
-// Sauvegarde bio
-function saveBio(){
-  currentUser.bio = document.getElementById('bio').value;
-  saveUser();
-}
+  // Affichage avatar
+  if(currentUser.avatar){
+    document.getElementById('avatar').src = currentUser.avatar;
+  }
 
-// Ajouter une story
-function addStory(event){
-  const file = event.target.files[0];
-  if(file){
-    const reader = new FileReader();
-    reader.onload = e => {
+  // Affichage bannière
+  if(currentUser.banner){
+    const banner = document.getElementById('banner');
+    banner.style.backgroundImage = `url(${currentUser.banner})`;
+    banner.style.backgroundSize = 'cover';
+    banner.style.backgroundPosition = 'center';
+    banner.innerHTML = ''; // enlever le texte
+  }
+
+  // Affichage nom et badge
+  document.getElementById('profilName').innerText = currentUser.name;
+  document.getElementById('profilBadge').innerHTML = currentUser.badge ? `Badge : ${getBadgeHTML(currentUser.badge)}` : '';
+
+  // Affichage bio
+  document.getElementById('bio').value = currentUser.bio || '';
+
+  // Affichage stories
+  if(currentUser.stories && currentUser.stories.length > 0){
+    const storyDisplay = document.getElementById('storyDisplay');
+    currentUser.stories.forEach(story => {
       const img = document.createElement('img');
-      img.src = e.target.result;
-      document.getElementById('storyDisplay').appendChild(img);
-      if(!currentUser.stories) currentUser.stories = [];
-      currentUser.stories.push(e.target.result);
-      saveUser();
-    };
-    reader.readAsDataURL(file);
+      img.src = story;
+      storyDisplay.appendChild(img);
+    });
   }
-}
 
-// Déconnexion
-function logout(){
-  localStorage.removeItem('instaUser');
-  window.location.href = "index.html";
-}
+  // Générer menu dynamique
+  const sidebar = document.getElementById('sidebar');
+  sidebar.innerHTML = `
+    <a href="feed.html">🏠 Feed</a>
+    <a href="explore.html">🔍 Explore</a>
+    <a href="profil.html">👤 Profil</a>
+    ${currentUser.badge === 'admin' ? '<a href="admin.html">⚙️ Admin</a>' : ''}
+    <a href="#" onclick="logout()">🚪 Déconnexion</a>
+  `;
+
+  // Sauvegarder utilisateur
+  function saveUser(){
+    localStorage.setItem('instaUser', JSON.stringify(currentUser));
+  }
+
+  // Mise à jour avatar
+  function updateAvatar(event){
+    const file = event.target.files[0];
+    if(file){
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById('avatar').src = e.target.result;
+        currentUser.avatar = e.target.result;
+        saveUser();
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  // Mise à jour bannière
+  function updateBanner(event){
+    const file = event.target.files[0];
+    if(file){
+      const reader = new FileReader();
+      reader.onload = e => {
+        const banner = document.getElementById('banner');
+        banner.style.backgroundImage = `url(${e.target.result})`;
+        banner.style.backgroundSize = 'cover';
+        banner.style.backgroundPosition = 'center';
+        banner.innerHTML = ''; 
+        currentUser.banner = e.target.result;
+        saveUser();
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  // Sauvegarder bio
+  function saveBio(){
+    currentUser.bio = document.getElementById('bio').value;
+    saveUser();
+  }
+
+  // Ajouter une story
+  function addStory(event){
+    const file = event.target.files[0];
+    if(file){
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        document.getElementById('storyDisplay').appendChild(img);
+        if(!currentUser.stories) currentUser.stories = [];
+        currentUser.stories.push(e.target.result);
+        saveUser();
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  // Déconnexion
+  function logout(){
+    localStorage.removeItem('instaUser');
+    window.location.href = "index.html";
+  }
 </script>
 
 </body>
