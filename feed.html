@@ -2,216 +2,213 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Feed | InstaClone</title>
+  <title>Feed</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 20px auto;
-      padding: 10px;
-    }
-    header {
+      margin: 0;
+      padding: 0;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      background: #f5f5f5;
     }
-    nav a {
-      margin: 0 10px;
+    .content {
+      flex: 1;
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+    }
+    #newPost, .post {
+      background: #fff;
+      padding: 10px;
+      border-radius: 8px;
+      margin: 10px 0;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    textarea, input[type="file"] {
+      width: 100%;
+      margin: 5px 0;
+      padding: 5px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 5px 10px;
+      margin-top: 5px;
+      border: none;
+      background: #0095f6;
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #007acc;
+    }
+    .post img {
+      max-width: 100%;
+      border-radius: 4px;
+      margin-top: 5px;
+    }
+    .actions {
+      margin-top: 5px;
+    }
+    .comment {
+      margin-left: 10px;
+      font-size: 0.9em;
+      color: #555;
+    }
+    .sidebar {
+      width: 200px;
+      background: #eee;
+      padding: 15px;
+      border-left: 1px solid #ccc;
+    }
+    .sidebar a {
+      display: block;
+      margin: 10px 0;
       text-decoration: none;
       color: #333;
       font-weight: bold;
     }
-    #newPost {
-      margin: 20px 0;
-    }
-    #newPost textarea {
-      width: 100%;
-      height: 80px;
-      padding: 10px;
-      box-sizing: border-box;
-      resize: vertical;
-      font-size: 14px;
-    }
-    #newPost button {
-      margin-top: 8px;
-      padding: 8px 12px;
-      cursor: pointer;
-      background: #0095f6;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-weight: bold;
-    }
-    .post {
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      padding: 10px;
-      margin-bottom: 15px;
-      display: flex;
-      gap: 10px;
-    }
-    .post .avatar {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-    .post-content {
-      flex: 1;
-    }
-    .post-header {
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .badge {
-      font-size: 14px;
-      color: white;
-      background: #0095f6;
-      padding: 2px 6px;
-      border-radius: 12px;
-    }
-    .post-date {
-      font-size: 12px;
-      color: #555;
-      margin-left: auto;
-    }
-    .post-text {
-      margin-top: 6px;
-      white-space: pre-wrap;
+    .sidebar a:hover {
+      color: #0095f6;
     }
   </style>
 </head>
 <body>
 
-<header>
-  <h1>StoryCoq</h1>
-  <nav>
-    <a href="feed.html">Feed</a>
-    <a href="profil.html">Profil</a>
-    <a href="admin.html">Admin</a>
-    <a href="index.html" onclick="logout()">Déconnexion</a>
-  </nav>
-</header>
+<div class="content">
+  <h1>Fil d'actualité</h1>
 
-<section id="newPost">
-  <textarea id="postContent" placeholder="Quoi de neuf ?"></textarea>
-  <button onclick="addPost()">Publier</button>
-</section>
+  <div id="newPost">
+    <textarea id="postContent" placeholder="Quoi de neuf ?"></textarea>
+    <input type="file" id="postImage" accept="image/*">
+    <button onclick="addPost()">Publier</button>
+  </div>
 
-<section id="postsList">
-  <!-- Les posts apparaîtront ici -->
-</section>
+  <div id="postContainer"></div>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <!-- Le menu sera généré en JS -->
+</div>
 
 <script>
-  const currentUser = JSON.parse(localStorage.getItem('instaUser'));
-  if (!currentUser) {
-    alert("Tu n'es pas connecté.e. Redirection...");
-    window.location.href = "index.html";
-  }
+let posts = JSON.parse(localStorage.getItem('instaPosts')) || [];
+let currentUser = JSON.parse(localStorage.getItem('instaUser'));
 
-  function getPosts() {
-    const posts = localStorage.getItem('StoryCoq');
-    return posts ? JSON.parse(posts) : [];
-  }
+if (!currentUser) {
+  alert("Vous devez être connecté !");
+  window.location.href = "index.html";
+}
 
-  function savePosts(posts) {
-    localStorage.setItem('StoryCoq', JSON.stringify(posts));
-  }
+// Générer le menu
+const sidebar = document.getElementById('sidebar');
+sidebar.innerHTML = `
+  <a href="feed.html">🏠 Feed</a>
+  <a href="profil.html">👤 Profil</a>
+  ${currentUser.badge === 'admin' ? '<a href="admin.html">⚙️ Admin</a>' : ''}
+  <a href="#" onclick="logout()">🚪 Déconnexion</a>
+`;
 
-  function displayPosts() {
-    const postsList = document.getElementById('postsList');
-    postsList.innerHTML = '';
-    const posts = getPosts();
+function logout() {
+  localStorage.removeItem('instaUser');
+  window.location.href = "index.html";
+}
 
-    posts.sort((a, b) => new Date(b.date) - new Date(a.date));
+function savePosts() {
+  localStorage.setItem('instaPosts', JSON.stringify(posts));
+}
 
-    for (const post of posts) {
-      const postElem = document.createElement('article');
-      postElem.classList.add('post');
-
-      const avatar = document.createElement('img');
-      avatar.classList.add('avatar');
-      avatar.src = post.avatar || 'default-avatar.png';
-      avatar.alt = "Avatar";
-
-      const content = document.createElement('div');
-      content.classList.add('post-content');
-
-      const header = document.createElement('div');
-      header.classList.add('post-header');
-
-      const name = document.createElement('span');
-      name.textContent = post.name;
-
-      const badge = document.createElement('span');
-      badge.classList.add('badge');
-      if (post.badge && post.badge.trim() !== "") {
-        badge.textContent = post.badge;
-      } else {
-        badge.style.display = 'none';
-      }
-
-      const dateSpan = document.createElement('span');
-      dateSpan.classList.add('post-date');
-      const date = new Date(post.date);
-      dateSpan.textContent = date.toLocaleString();
-
-      header.appendChild(name);
-      header.appendChild(badge);
-      header.appendChild(dateSpan);
-
-      const bio = document.createElement('div');
-      bio.style.fontSize = '12px';
-      bio.style.color = '#555';
-      bio.textContent = post.bio || '';
-
-      const text = document.createElement('div');
-      text.classList.add('post-text');
-      text.textContent = post.content;
-
-      content.appendChild(header);
-      content.appendChild(bio);
-      content.appendChild(text);
-
-      postElem.appendChild(avatar);
-      postElem.appendChild(content);
-
-      postsList.appendChild(postElem);
+function displayPosts() {
+  const container = document.getElementById('postContainer');
+  container.innerHTML = '';
+  
+  posts.forEach((post, index) => {
+    const div = document.createElement('div');
+    div.className = 'post';
+    div.innerHTML = `<strong>${post.author}</strong>: ${post.content}`;
+    
+    if (post.image) {
+      div.innerHTML += `<br><img src="${post.image}" alt="Image du post">`;
     }
+    
+    div.innerHTML += `<div class="actions">
+      <button onclick="likePost(${index})">❤️ ${post.likes || 0}</button>
+      <button onclick="addComment(${index})">💬 Commenter</button>
+      ${(currentUser.badge === 'admin' || currentUser.name === post.author) ? `<button onclick="deletePost(${index})">🗑️ Supprimer</button>` : ''}
+    </div>`;
+    
+    if (post.comments) {
+      post.comments.forEach(comment => {
+        div.innerHTML += `<div class="comment"><strong>${comment.author}</strong> : ${comment.text}</div>`;
+      });
+    }
+    
+    container.appendChild(div);
+  });
+}
+
+function addPost() {
+  const content = document.getElementById('postContent').value.trim();
+  const file = document.getElementById('postImage').files[0];
+  
+  if (!content && !file) {
+    alert("Ton post est vide !");
+    return;
   }
 
-  function addPost() {
-    const content = document.getElementById('postContent').value.trim();
-    if (!content) {
-      alert("Le message est vide !");
-      return;
-    }
-
-    const posts = getPosts();
-
-    const newPost = {
-      name: currentUser.name,
-      badge: currentUser.badge,
-      avatar: currentUser.avatar,
-      bio: currentUser.bio,
-      content: content,
-      date: new Date().toISOString()
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      savePost(content, e.target.result);
     };
+    reader.readAsDataURL(file);
+  } else {
+    savePost(content, null);
+  }
+}
 
-    posts.push(newPost);
-    savePosts(posts);
-    document.getElementById('postContent').value = '';
+function savePost(content, image) {
+  posts.unshift({
+    author: currentUser.name,
+    content: content,
+    image: image,
+    likes: 0,
+    comments: []
+  });
+  
+  savePosts();
+  displayPosts();
+  
+  document.getElementById('postContent').value = "";
+  document.getElementById('postImage').value = "";
+}
+
+function deletePost(index) {
+  if (confirm("Supprimer ce post ?")) {
+    posts.splice(index, 1);
+    savePosts();
     displayPosts();
   }
+}
 
-  function logout() {
-    localStorage.removeItem('instaUser');
-  }
-
+function likePost(index) {
+  posts[index].likes = (posts[index].likes || 0) + 1;
+  savePosts();
   displayPosts();
+}
+
+function addComment(index) {
+  const text = prompt("Ton commentaire :");
+  if (text) {
+    posts[index].comments.push({ author: currentUser.name, text: text });
+    savePosts();
+    displayPosts();
+  }
+}
+
+// Init
+displayPosts();
 </script>
 
 </body>
