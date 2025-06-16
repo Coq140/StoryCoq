@@ -1,120 +1,243 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Panel Admin | InstaClone</title>
-<style>
-  body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
-  h1 { margin-bottom: 20px; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
-  th { background: #eee; }
-  input[type=text], select { width: 100%; padding: 5px; }
-  button { padding: 5px 10px; margin: 2px; cursor: pointer; border: none; border-radius: 4px; }
-  .btn-save { background: #28a745; color: white; }
-  .btn-delete { background: #dc3545; color: white; }
-  .btn-logout { background: #007bff; color: white; margin-bottom: 20px; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin - Gestion utilisateurs avancée</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; padding: 10px;}
+    table {width: 100%; border-collapse: collapse; margin-top: 15px;}
+    th, td {border: 1px solid #aaa; padding: 8px; text-align: left;}
+    th {background-color: #ddd;}
+    input[type="text"], select {width: 100%; padding: 5px; box-sizing: border-box;}
+    button {margin-top: 10px; padding: 8px 12px; cursor: pointer; background: #0095f6; color: white; border: none; border-radius: 4px; font-weight: bold;}
+    nav a {margin-right: 10px; text-decoration: none; font-weight: bold; color: #333;}
+    #addAdminSection {margin-top: 30px; padding: 15px; background: #eee; border-radius: 8px;}
+    #message {color: green; font-weight: bold; margin-bottom: 10px;}
+  </style>
 </head>
 <body>
 
-<h1>Panel Admin</h1>
-<button class="btn-logout" onclick="logout()">Déconnexion</button>
+<header>
+  <h1>Admin - Gestion des utilisateurs</h1>
+  <nav>
+    <a href="feed.html">Feed</a>
+    <a href="profil.html">Profil</a>
+    <a href="index.html" onclick="logout()">Déconnexion</a>
+  </nav>
+</header>
 
-<table>
+<div id="message"></div>
+
+<table id="usersTable">
   <thead>
     <tr>
       <th>Nom d'utilisateur</th>
-      <th>Rôle</th>
-      <th>Affiliation</th>
-      <th>Certifié</th>
-      <th>Mot de passe</th>
+      <th>Badge</th>
+      <th>Entreprise affiliée</th>
+      <th>Bio</th>
+      <th>Avatar URL</th>
+      <th>Bannière URL</th>
+      <th>Story</th>
       <th>Actions</th>
     </tr>
   </thead>
-  <tbody id="usersTableBody"></tbody>
+  <tbody></tbody>
 </table>
 
+<!-- Section ajout admin manuellement -->
+<div id="addAdminSection">
+  <h2>Ajouter un admin manuellement</h2>
+  <input type="text" id="newAdminUsername" placeholder="Nom d'utilisateur à rendre admin" />
+  <button onclick="addAdminManually()">Ajouter admin</button>
+</div>
+
 <script>
-// Récupérer l'admin actuel (pour vérifier accès)
-const currentUser = JSON.parse(localStorage.getItem('instaUser'));
-if(!currentUser || currentUser.badge !== 'admin'){
-  alert("Accès refusé. Vous devez être admin.");
-  window.location.href = "index.html";
-}
+  let users = JSON.parse(localStorage.getItem('instaUsers')) || {};
+  let currentUser = JSON.parse(localStorage.getItem('instaUser'));
 
-// Récupérer la liste des utilisateurs
-let users = JSON.parse(localStorage.getItem('instaUsers')) || [];
-
-// Fonction pour afficher la table des utilisateurs
-function displayUsers(){
-  const tbody = document.getElementById('usersTableBody');
-  tbody.innerHTML = '';
-
-  users.forEach((user, index) => {
-    // Créer une ligne par utilisateur
-    const tr = document.createElement('tr');
-
-    tr.innerHTML = `
-      <td><input type="text" value="${user.name}" onchange="updateUser(${index}, 'name', this.value)"></td>
-      <td>
-        <select onchange="updateUser(${index}, 'badge', this.value)">
-          <option value="" ${user.badge === '' ? 'selected' : ''}>User</option>
-          <option value="admin" ${user.badge === 'admin' ? 'selected' : ''}>Admin</option>
-          <option value="entreprise" ${user.badge === 'entreprise' ? 'selected' : ''}>Entreprise</option>
-        </select>
-      </td>
-      <td>
-        <input type="text" value="${user.affiliation || ''}" onchange="updateUser(${index}, 'affiliation', this.value)">
-      </td>
-      <td>
-        <input type="checkbox" ${user.certified ? 'checked' : ''} onchange="updateUser(${index}, 'certified', this.checked)">
-      </td>
-      <td>
-        <input type="text" value="${user.password}" readonly style="width:100px;">
-      </td>
-      <td>
-        <button class="btn-save" onclick="saveUsers()">💾 Sauvegarder</button>
-        <button class="btn-delete" onclick="deleteUser(${index})">🗑️ Supprimer</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-// Met à jour un champ d’un utilisateur dans la liste users
-function updateUser(index, field, value){
-  if(field === 'certified'){
-    users[index][field] = value; // checkbox true/false
-  } else {
-    users[index][field] = value.trim();
+  // Accès réservé aux admins
+  if (!currentUser || currentUser.badge !== "admin") {
+    alert("Accès refusé : page admin réservée aux administrateurs.");
+    window.location.href = "index.html";
   }
-}
 
-// Supprime un utilisateur
-function deleteUser(index){
-  if(confirm(`Supprimer l'utilisateur "${users[index].name}" ?`)){
-    users.splice(index,1);
+  function saveUsers() {
+    localStorage.setItem('instaUsers', JSON.stringify(users));
+  }
+
+  function updateCurrentUserIfNeeded(username) {
+    if (currentUser && currentUser.name === username) {
+      currentUser = { name: username, ...users[username] };
+      localStorage.setItem('instaUser', JSON.stringify(currentUser));
+    }
+  }
+
+  function buildTable() {
+    const tbody = document.querySelector('#usersTable tbody');
+    tbody.innerHTML = '';
+
+    for (const username in users) {
+      const user = users[username];
+      const tr = document.createElement('tr');
+
+      // Nom
+      const tdName = document.createElement('td');
+      tdName.textContent = username;
+      tr.appendChild(tdName);
+
+      // Badge
+      const tdBadge = document.createElement('td');
+      const selectBadge = document.createElement('select');
+      const badges = ["", "certifié", "entreprise", "admin"];
+      badges.forEach(b => {
+        const option = document.createElement('option');
+        option.value = b;
+        option.textContent = b === "" ? "(aucun)" : b;
+        if (user.badge === b) option.selected = true;
+        selectBadge.appendChild(option);
+      });
+      tdBadge.appendChild(selectBadge);
+      tr.appendChild(tdBadge);
+
+      // Entreprise affiliée
+      const tdEntreprise = document.createElement('td');
+      const inputEntreprise = document.createElement('input');
+      inputEntreprise.type = 'text';
+      inputEntreprise.placeholder = "Nom compte entreprise affiliée";
+      inputEntreprise.value = user.entrepriseAffiliee || "";
+      if (user.badge !== "entreprise") {
+        inputEntreprise.disabled = true;
+        inputEntreprise.style.backgroundColor = "#eee";
+      }
+      tdEntreprise.appendChild(inputEntreprise);
+      tr.appendChild(tdEntreprise);
+
+      // Bio
+      const tdBio = document.createElement('td');
+      const inputBio = document.createElement('input');
+      inputBio.type = 'text';
+      inputBio.value = user.bio || "";
+      tdBio.appendChild(inputBio);
+      tr.appendChild(tdBio);
+
+      // Avatar
+      const tdAvatar = document.createElement('td');
+      const inputAvatar = document.createElement('input');
+      inputAvatar.type = 'text';
+      inputAvatar.value = user.avatar || "";
+      tdAvatar.appendChild(inputAvatar);
+      tr.appendChild(tdAvatar);
+
+      // Bannière
+      const tdBanner = document.createElement('td');
+      const inputBanner = document.createElement('input');
+      inputBanner.type = 'text';
+      inputBanner.value = user.banner || "";
+      tdBanner.appendChild(inputBanner);
+      tr.appendChild(tdBanner);
+
+      // Story
+      const tdStory = document.createElement('td');
+      const inputStory = document.createElement('input');
+      inputStory.type = 'text';
+      inputStory.value = user.story || "";
+      tdStory.appendChild(inputStory);
+      tr.appendChild(tdStory);
+
+      // Actions
+      const tdActions = document.createElement('td');
+      const btnSave = document.createElement('button');
+      btnSave.textContent = "Sauvegarder";
+      btnSave.onclick = () => {
+        const badgeSelected = selectBadge.value;
+        users[username].badge = badgeSelected;
+        users[username].bio = inputBio.value.trim();
+        users[username].avatar = inputAvatar.value.trim() || "default-avatar.png";
+        users[username].banner = inputBanner.value.trim();
+        users[username].story = inputStory.value.trim();
+
+        if (badgeSelected === "entreprise") {
+          const affilié = inputEntreprise.value.trim();
+          if (affilié && users[affilié]) {
+            users[username].entrepriseAffiliee = affilié;
+          } else {
+            alert("Le compte affilié n'existe pas. Laissez vide ou mettez un compte valide.");
+            users[username].entrepriseAffiliee = "";
+            inputEntreprise.value = "";
+          }
+        } else {
+          users[username].entrepriseAffiliee = "";
+          inputEntreprise.value = "";
+        }
+
+        saveUsers();
+        updateCurrentUserIfNeeded(username);
+        alert(`Utilisateur "${username}" mis à jour !`);
+        buildTable();
+      };
+      tdActions.appendChild(btnSave);
+
+      // Supprimer utilisateur (uniquement si admin)
+      if (currentUser.badge === "admin") {
+        const btnDelete = document.createElement('button');
+        btnDelete.textContent = "Supprimer";
+        btnDelete.style.backgroundColor = "#f44336";
+        btnDelete.style.marginLeft = "10px";
+        btnDelete.onclick = () => {
+          if (confirm(`Supprimer l'utilisateur ${username} ?`)) {
+            delete users[username];
+            saveUsers();
+            if (currentUser.name === username) {
+              alert("Vous avez supprimé votre propre compte, vous allez être déconnecté.");
+              logout();
+            }
+            buildTable();
+          }
+        };
+        tdActions.appendChild(btnDelete);
+      }
+
+      tr.appendChild(tdActions);
+
+      // Gérer l'état du champ entreprise affiliée suivant badge
+      selectBadge.onchange = () => {
+        if (selectBadge.value === "entreprise") {
+          inputEntreprise.disabled = false;
+          inputEntreprise.style.backgroundColor = "";
+        } else {
+          inputEntreprise.disabled = true;
+          inputEntreprise.value = "";
+          inputEntreprise.style.backgroundColor = "#eee";
+        }
+      };
+
+      tbody.appendChild(tr);
+    }
+  }
+
+  function addAdminManually() {
+    const newAdmin = document.getElementById('newAdminUsername').value.trim();
+    if (!newAdmin) {
+      alert("Veuillez saisir un nom d'utilisateur.");
+      return;
+    }
+    if (!users[newAdmin]) {
+      alert("Cet utilisateur n'existe pas !");
+      return;
+    }
+    users[newAdmin].badge = "admin";
     saveUsers();
-    displayUsers();
+    alert(`L'utilisateur ${newAdmin} est maintenant admin.`);
+    buildTable();
   }
-}
 
-// Sauvegarder la liste dans localStorage
-function saveUsers(){
-  localStorage.setItem('instaUsers', JSON.stringify(users));
-  alert("Modifications sauvegardées !");
-}
+  function logout() {
+    localStorage.removeItem('instaUser');
+    window.location.href = "index.html";
+  }
 
-// Déconnexion admin
-function logout(){
-  localStorage.removeItem('instaUser');
-  window.location.href = "index.html";
-}
-
-// Initialisation affichage
-displayUsers();
+  buildTable();
 </script>
 
 </body>
