@@ -14,6 +14,7 @@
     nav a {margin-right: 10px; text-decoration: none; font-weight: bold; color: #333;}
     #addAdminSection {margin-top: 30px; padding: 15px; background: #eee; border-radius: 8px;}
     #message {color: green; font-weight: bold; margin-bottom: 10px;}
+    .badge-checkbox {margin-right: 10px;}
   </style>
 </head>
 <body>
@@ -33,7 +34,7 @@
   <thead>
     <tr>
       <th>Nom d'utilisateur</th>
-      <th>Badge</th>
+      <th>Badges</th>
       <th>Entreprise affiliée</th>
       <th>Bio</th>
       <th>Avatar URL</th>
@@ -53,14 +54,17 @@
 </div>
 
 <script>
+  // Récupérer les utilisateurs (objet: username => data)
   let users = JSON.parse(localStorage.getItem('instaUsers')) || {};
   let currentUser = JSON.parse(localStorage.getItem('instaUser'));
 
-  // Accès réservé aux admins
-  if (!currentUser || currentUser.badge !== "admin") {
+  // Vérification accès admin
+  if (!currentUser || !Array.isArray(currentUser.badges) || !currentUser.badges.includes("admin")) {
     alert("Accès refusé : page admin réservée aux administrateurs.");
     window.location.href = "index.html";
   }
+
+  const allBadges = ["certifié", "entreprise", "admin"];
 
   function saveUsers() {
     localStorage.setItem('instaUsers', JSON.stringify(users));
@@ -81,24 +85,51 @@
       const user = users[username];
       const tr = document.createElement('tr');
 
-      // Nom
+      // Nom utilisateur
       const tdName = document.createElement('td');
       tdName.textContent = username;
       tr.appendChild(tdName);
 
-      // Badge
-      const tdBadge = document.createElement('td');
-      const selectBadge = document.createElement('select');
-      const badges = ["", "certifié", "entreprise", "admin"];
-      badges.forEach(b => {
-        const option = document.createElement('option');
-        option.value = b;
-        option.textContent = b === "" ? "(aucun)" : b;
-        if (user.badge === b) option.selected = true;
-        selectBadge.appendChild(option);
+      // Badges (checkboxes)
+      const tdBadges = document.createElement('td');
+      allBadges.forEach(badge => {
+        const label = document.createElement('label');
+        label.style.marginRight = "10px";
+        label.className = "badge-checkbox";
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = badge;
+        checkbox.checked = Array.isArray(user.badges) && user.badges.includes(badge);
+
+        checkbox.onchange = () => {
+          if (!Array.isArray(user.badges)) user.badges = [];
+          if (checkbox.checked) {
+            if (!user.badges.includes(badge)) user.badges.push(badge);
+          } else {
+            user.badges = user.badges.filter(b => b !== badge);
+          }
+          saveUsers();
+
+          // Gérer activation/désactivation du champ entreprise affiliée
+          if (badge === "entreprise") {
+            inputEntreprise.disabled = !checkbox.checked;
+            inputEntreprise.style.backgroundColor = checkbox.checked ? "" : "#eee";
+            if (!checkbox.checked) {
+              user.entrepriseAffiliee = "";
+              inputEntreprise.value = "";
+              saveUsers();
+            }
+          }
+
+          updateCurrentUserIfNeeded(username);
+        };
+
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(" " + badge));
+        tdBadges.appendChild(label);
       });
-      tdBadge.appendChild(selectBadge);
-      tr.appendChild(tdBadge);
+      tr.appendChild(tdBadges);
 
       // Entreprise affiliée
       const tdEntreprise = document.createElement('td');
@@ -106,10 +137,8 @@
       inputEntreprise.type = 'text';
       inputEntreprise.placeholder = "Nom compte entreprise affiliée";
       inputEntreprise.value = user.entrepriseAffiliee || "";
-      if (user.badge !== "entreprise") {
-        inputEntreprise.disabled = true;
-        inputEntreprise.style.backgroundColor = "#eee";
-      }
+      inputEntreprise.disabled = !(Array.isArray(user.badges) && user.badges.includes("entreprise"));
+      if(inputEntreprise.disabled) inputEntreprise.style.backgroundColor = "#eee";
       tdEntreprise.appendChild(inputEntreprise);
       tr.appendChild(tdEntreprise);
 
@@ -150,25 +179,20 @@
       const btnSave = document.createElement('button');
       btnSave.textContent = "Sauvegarder";
       btnSave.onclick = () => {
-        const badgeSelected = selectBadge.value;
-        users[username].badge = badgeSelected;
-        users[username].bio = inputBio.value.trim();
-        users[username].avatar = inputAvatar.value.trim() || "default-avatar.png";
-        users[username].banner = inputBanner.value.trim();
-        users[username].story = inputStory.value.trim();
+        // Sauvegarde données du formulaire
+        user.entrepriseAffiliee = inputEntreprise.value.trim();
+        user.bio = inputBio.value.trim();
+        user.avatar = inputAvatar.value.trim() || "default-avatar.png";
+        user.banner = inputBanner.value.trim();
+        user.story = inputStory.value.trim();
 
-        if (badgeSelected === "entreprise") {
-          const affilié = inputEntreprise.value.trim();
-          if (affilié && users[affilié]) {
-            users[username].entrepriseAffiliee = affilié;
-          } else {
-            alert("Le compte affilié n'existe pas. Laissez vide ou mettez un compte valide.");
-            users[username].entrepriseAffiliee = "";
-            inputEntreprise.value = "";
-          }
-        } else {
-          users[username].entrepriseAffiliee = "";
+        // Si badge entreprise est désactivé, on vide l'affiliation
+        if (!user.badges.includes("entreprise")) {
+          user.entrepriseAffiliee = "";
           inputEntreprise.value = "";
+        } else if(user.entrepriseAffiliee && !users[user.entrepriseAffiliee]) {
+          alert("Le compte affilié n'existe pas. Veuillez corriger.");
+          return;
         }
 
         saveUsers();
@@ -178,8 +202,7 @@
       };
       tdActions.appendChild(btnSave);
 
-      // Supprimer utilisateur (uniquement si admin)
-      if (currentUser.badge === "admin") {
+      if (currentUser.badges.includes("admin")) {
         const btnDelete = document.createElement('button');
         btnDelete.textContent = "Supprimer";
         btnDelete.style.backgroundColor = "#f44336";
@@ -200,18 +223,6 @@
 
       tr.appendChild(tdActions);
 
-      // Gérer l'état du champ entreprise affiliée suivant badge
-      selectBadge.onchange = () => {
-        if (selectBadge.value === "entreprise") {
-          inputEntreprise.disabled = false;
-          inputEntreprise.style.backgroundColor = "";
-        } else {
-          inputEntreprise.disabled = true;
-          inputEntreprise.value = "";
-          inputEntreprise.style.backgroundColor = "#eee";
-        }
-      };
-
       tbody.appendChild(tr);
     }
   }
@@ -226,10 +237,16 @@
       alert("Cet utilisateur n'existe pas !");
       return;
     }
-    users[newAdmin].badge = "admin";
-    saveUsers();
-    alert(`L'utilisateur ${newAdmin} est maintenant admin.`);
-    buildTable();
+    if (!Array.isArray(users[newAdmin].badges)) users[newAdmin].badges = [];
+    if (!users[newAdmin].badges.includes("admin")) {
+      users[newAdmin].badges.push("admin");
+      saveUsers();
+      alert(`L'utilisateur "${newAdmin}" est désormais admin.`);
+      buildTable();
+      document.getElementById('newAdminUsername').value = "";
+    } else {
+      alert("Cet utilisateur est déjà admin.");
+    }
   }
 
   function logout() {
@@ -237,6 +254,7 @@
     window.location.href = "index.html";
   }
 
+  // Initialisation
   buildTable();
 </script>
 
