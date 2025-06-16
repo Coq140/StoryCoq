@@ -75,23 +75,26 @@
       flex-wrap: wrap;
     }
     .badge {
-      background: #eee;
+      background: #fff;
       padding: 5px 10px;
+      border: 1px solid #ccc;
       border-radius: 20px;
       display: flex;
       align-items: center;
-      cursor: default;
       position: relative;
       font-size: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+      cursor: default;
+    }
+    .badge:hover {
+      transform: scale(1.1);
     }
     .badge img {
       width: 20px;
       height: 20px;
       margin-right: 5px;
       border-radius: 3px;
-    }
-    .badge:hover .tooltip {
-      display: block;
     }
     .tooltip {
       display: none;
@@ -107,6 +110,9 @@
       white-space: nowrap;
       pointer-events: none;
       z-index: 10;
+    }
+    .badge:hover .tooltip {
+      display: block;
     }
   </style>
 </head>
@@ -141,32 +147,32 @@
 <div class="sidebar" id="sidebar"></div>
 
 <script>
-// Liste des entreprises avec logos (fichiers dans dossier /logos/)
 const entreprises = {
   'AcmeCorp': { name: "Acme Corporation", logo: "logos/acmecorp.png" },
-  'TechInc': { name: "Tech Incorporated", logo: "logos/techinc.png" },
-  // ajoute ici d'autres entreprises
+  'TechInc': { name: "Tech Incorporated", logo: "logos/techinc.png" }
 };
 
-// Liste des badges (sans affilié)
 const badgesInfo = {
   admin: { display: '🛡️', description: 'Administrateur du site' },
   staff: { display: '⭐', description: 'Membre du staff' },
-  vip: { display: '💎', description: 'Utilisateur VIP' }
+  vip: { display: '💎', description: 'Utilisateur VIP' },
+  certifie: { display: '✔️', description: 'Compte certifié' }
 };
 
 let currentUser = JSON.parse(localStorage.getItem('instaUser'));
-
 if (!currentUser) {
   alert("Vous devez être connecté !");
   window.location.href = "index.html";
 }
 
-// Affichage avatar et bannière
-if(currentUser.avatar){
+// Affichage profil
+document.getElementById('profilName').innerText = currentUser.name;
+document.getElementById('bio').value = currentUser.bio || '';
+
+if (currentUser.avatar) {
   document.getElementById('avatar').src = currentUser.avatar;
 }
-if(currentUser.banner){
+if (currentUser.banner) {
   const banner = document.getElementById('banner');
   banner.style.backgroundImage = `url(${currentUser.banner})`;
   banner.style.backgroundSize = 'cover';
@@ -174,82 +180,70 @@ if(currentUser.banner){
   banner.innerHTML = '';
 }
 
-document.getElementById('profilName').innerText = currentUser.name;
-document.getElementById('bio').value = currentUser.bio || '';
-
-// Afficher stories
-if(currentUser.stories && currentUser.stories.length > 0){
-  const storyDisplay = document.getElementById('storyDisplay');
+if (currentUser.stories) {
   currentUser.stories.forEach(story => {
     const img = document.createElement('img');
     img.src = story;
-    storyDisplay.appendChild(img);
+    document.getElementById('storyDisplay').appendChild(img);
   });
 }
-
-// Fonction pour créer un badge simple
-function createBadgeElement(badgeKey){
-  if(!badgesInfo[badgeKey]) return null;
-  const badge = document.createElement('div');
-  badge.className = 'badge';
-  badge.textContent = badgesInfo[badgeKey].display;
-  const tooltip = document.createElement('span');
-  tooltip.className = 'tooltip';
-  tooltip.textContent = badgesInfo[badgeKey].description;
-  badge.appendChild(tooltip);
-  return badge;
-}
-
-// Fonction badge affilié avec logo
-function createAffiliateBadge(affiliatePseudo){
-  const entreprise = entreprises[affiliatePseudo];
-  if(!entreprise) return null;
-  const badge = document.createElement('div');
-  badge.className = 'badge';
-  badge.innerHTML = `<img src="${entreprise.logo}" alt="${entreprise.name}" title="Affilié à ${entreprise.name}">`;
-  const tooltip = document.createElement('span');
-  tooltip.className = 'tooltip';
-  tooltip.textContent = `Affilié à ${entreprise.name}`;
-  badge.appendChild(tooltip);
-  badge.onclick = () => alert(`Compte affilié à l’entreprise : ${entreprise.name}`);
-  return badge;
-}
-
-// Affichage badges dans profil
-const badgeContainer = document.getElementById('profilBadge');
-badgeContainer.innerHTML = '';
 
 // Badges classiques
-if(Array.isArray(currentUser.badges)){
-  currentUser.badges.forEach(b => {
-    const el = createBadgeElement(b);
-    if(el) badgeContainer.appendChild(el);
+const badgeContainer = document.getElementById('profilBadge');
+if (Array.isArray(currentUser.badges)) {
+  currentUser.badges.forEach(key => {
+    if (badgesInfo[key]) {
+      const badge = document.createElement('div');
+      badge.className = 'badge';
+      badge.textContent = badgesInfo[key].display;
+      const tooltip = document.createElement('span');
+      tooltip.className = 'tooltip';
+      tooltip.textContent = badgesInfo[key].description;
+      badge.appendChild(tooltip);
+      badgeContainer.appendChild(badge);
+    }
   });
 }
 
-// Badge affilié
-if(currentUser.affiliateWith){
-  const affBadge = createAffiliateBadge(currentUser.affiliateWith);
-  if(affBadge) badgeContainer.appendChild(affBadge);
+// Badge entreprise
+if (currentUser.affiliateWith && entreprises[currentUser.affiliateWith]) {
+  const ent = entreprises[currentUser.affiliateWith];
+  const badge = document.createElement('div');
+  badge.className = 'badge';
+  badge.innerHTML = `<img src="${ent.logo}" alt="${ent.name}">`;
+  const tooltip = document.createElement('span');
+  tooltip.className = 'tooltip';
+  tooltip.textContent = `Affilié à ${ent.name}`;
+  badge.appendChild(tooltip);
+  badge.onclick = () => alert(`Compte affilié à : ${ent.name}`);
+  badgeContainer.appendChild(badge);
+
+  document.getElementById('affiliateInfo').textContent = `Ce compte est affilié à : ${ent.name}`;
 }
 
-// Affichage texte affilié en bas profil
-const affiliateInfo = document.getElementById('affiliateInfo');
-if(currentUser.affiliateWith && entreprises[currentUser.affiliateWith]){
-  affiliateInfo.textContent = `Ce compte est affilié à l’entreprise : ${entreprises[currentUser.affiliateWith].name}`;
-}else{
-  affiliateInfo.textContent = '';
-}
-
-// Sauvegarde utilisateur dans localStorage
-function saveUser(){
-  localStorage.setItem('instaUser', JSON.stringify(currentUser));
-}
-
-// Mise à jour avatar
-function updateAvatar(event){
+// Story + sauvegarde
+function addStory(event) {
   const file = event.target.files[0];
-  if(file){
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      document.getElementById('storyDisplay').appendChild(img);
+      currentUser.stories = currentUser.stories || [];
+      currentUser.stories.push(e.target.result);
+      saveUser();
+    };
+    reader.readAsDataURL(file);
+  }
+}
+function saveBio() {
+  currentUser.bio = document.getElementById('bio').value;
+  saveUser();
+}
+function updateAvatar(event) {
+  const file = event.target.files[0];
+  if (file) {
     const reader = new FileReader();
     reader.onload = e => {
       document.getElementById('avatar').src = e.target.result;
@@ -259,11 +253,9 @@ function updateAvatar(event){
     reader.readAsDataURL(file);
   }
 }
-
-// Mise à jour bannière
-function updateBanner(event){
+function updateBanner(event) {
   const file = event.target.files[0];
-  if(file){
+  if (file) {
     const reader = new FileReader();
     reader.onload = e => {
       const banner = document.getElementById('banner');
@@ -277,41 +269,19 @@ function updateBanner(event){
     reader.readAsDataURL(file);
   }
 }
-
-// Sauvegarde bio
-function saveBio(){
-  currentUser.bio = document.getElementById('bio').value;
-  saveUser();
+function saveUser() {
+  localStorage.setItem('instaUser', JSON.stringify(currentUser));
 }
 
-// Ajouter story
-function addStory(event){
-  const file = event.target.files[0];
-  if(file){
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = document.createElement('img');
-      img.src = e.target.result;
-      document.getElementById('storyDisplay').appendChild(img);
-      if(!currentUser.stories) currentUser.stories = [];
-      currentUser.stories.push(e.target.result);
-      saveUser();
-    };
-    reader.readAsDataURL(file);
-  }
-}
-
-// Menu latéral
-const sidebar = document.getElementById('sidebar');
-sidebar.innerHTML = `
+// Sidebar
+document.getElementById('sidebar').innerHTML = `
   <a href="feed.html">🏠 Feed</a>
   <a href="explore.html">🔍 Explore</a>
   <a href="profil.html">👤 Profil</a>
   ${currentUser.badges && currentUser.badges.includes('admin') ? '<a href="admin.html">⚙️ Admin</a>' : ''}
   <a href="#" onclick="logout()">🚪 Déconnexion</a>
 `;
-
-function logout(){
+function logout() {
   localStorage.removeItem('instaUser');
   window.location.href = "index.html";
 }
