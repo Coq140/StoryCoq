@@ -3,27 +3,40 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Admin Panel Simple</title>
+<title>Admin Panel | InstaClone</title>
 <style>
-  body { font-family: Arial, sans-serif; padding: 20px; background: #fafafa; }
+  body { font-family: Arial, sans-serif; background: #fafafa; padding: 20px; }
   table { border-collapse: collapse; width: 100%; }
-  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: middle; }
   th { background: #333; color: white; }
-  .badge { font-size: 18px; margin-right: 5px; }
-  .logo { width: 30px; height: 30px; vertical-align: middle; border-radius: 3px; margin-right: 5px; }
-  button { cursor: pointer; padding: 5px 10px; margin: 0 3px; }
+  button { padding: 5px 8px; margin: 0 3px; cursor: pointer; }
+  .badge {
+    font-size: 18px;
+    margin-right: 5px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .badge:hover {
+    opacity: 0.6;
+  }
+  .logo {
+    width: 30px;
+    height: 30px;
+    vertical-align: middle;
+    border-radius: 3px;
+    margin-right: 5px;
+  }
 </style>
 </head>
 <body>
 
-<h1>Panel Admin Simple</h1>
+<h1>Panel Admin</h1>
 
 <table id="usersTable">
   <thead>
     <tr>
       <th>Utilisateur</th>
-      <th>Mot de passe</th>
-      <th>Badges</th>
+      <th>Badges (cliquer pour ajouter/enlever)</th>
       <th>Affilié à</th>
       <th>Actions</th>
     </tr>
@@ -32,20 +45,56 @@
 </table>
 
 <script>
+// Ta liste d’entreprises (logo en URL)
 const entreprises = {
   'AcmeCorp': { name: "Acme Corporation", logo: "https://via.placeholder.com/30?text=A" },
-  'TechInc': { name: "Tech Incorporated", logo: "https://via.placeholder.com/30?text=T" }
+  'TechInc': { name: "Tech Incorporated", logo: "https://via.placeholder.com/30?text=T" },
 };
 
-// Chargement utilisateurs depuis localStorage ou initialisation par défaut
-let users = JSON.parse(localStorage.getItem('users')) || [
-  { id: 1, name: "Alice", password: "alice123", badges: ["admin", "vip"], affiliateWith: "AcmeCorp" },
-  { id: 2, name: "Bob", password: "bob456", badges: ["staff"], affiliateWith: "TechInc" },
-  { id: 3, name: "Charlie", password: "charlie789", badges: [], affiliateWith: null }
+// Récupère ta vraie base utilisateurs depuis localStorage ou crée une base vide
+let users = JSON.parse(localStorage.getItem('instaUsers')) || [
+  { id: 1, name: "Alice", badges: ["admin", "vip"], affiliateWith: "AcmeCorp" },
+  { id: 2, name: "Bob", badges: ["staff"], affiliateWith: "TechInc" },
+  { id: 3, name: "Charlie", badges: [], affiliateWith: null }
 ];
 
+// Liste de tous les badges possibles
+const allBadges = ['admin', 'staff', 'vip'];
+
 function saveUsers(){
-  localStorage.setItem('users', JSON.stringify(users));
+  localStorage.setItem('instaUsers', JSON.stringify(users));
+}
+
+// Fonction pour afficher les badges avec interaction clic (ajout/retrait)
+function createBadgeElement(user, badge) {
+  const span = document.createElement('span');
+  span.className = 'badge';
+  span.title = `Badge: ${badge} (cliquer pour toggler)`;
+  if(badge === 'admin') span.textContent = '🛡️';
+  else if(badge === 'staff') span.textContent = '⭐';
+  else if(badge === 'vip') span.textContent = '💎';
+  else span.textContent = badge;
+
+  // Si utilisateur possède ce badge, style en gras
+  if(user.badges && user.badges.includes(badge)){
+    span.style.fontWeight = 'bold';
+  }
+
+  // Toggle badge au clic
+  span.onclick = () => {
+    if(!user.badges) user.badges = [];
+    if(user.badges.includes(badge)){
+      // retirer
+      user.badges = user.badges.filter(b => b !== badge);
+      span.style.fontWeight = 'normal';
+    } else {
+      // ajouter
+      user.badges.push(badge);
+      span.style.fontWeight = 'bold';
+    }
+    saveUsers();
+  };
+  return span;
 }
 
 function renderUsers(){
@@ -55,34 +104,19 @@ function renderUsers(){
   users.forEach(user => {
     const tr = document.createElement('tr');
 
-    // Nom
+    // Nom utilisateur
     const tdName = document.createElement('td');
     tdName.textContent = user.name;
     tr.appendChild(tdName);
 
-    // Mot de passe (affichage simple)
-    const tdPwd = document.createElement('td');
-    tdPwd.textContent = user.password;
-    tr.appendChild(tdPwd);
-
-    // Badges
+    // Badges (avec clic)
     const tdBadges = document.createElement('td');
-    if(user.badges && user.badges.length > 0){
-      user.badges.forEach(b => {
-        const span = document.createElement('span');
-        span.className = 'badge';
-        if(b === 'admin') span.textContent = '🛡️';
-        else if(b === 'staff') span.textContent = '⭐';
-        else if(b === 'vip') span.textContent = '💎';
-        else span.textContent = b;
-        tdBadges.appendChild(span);
-      });
-    } else {
-      tdBadges.textContent = '—';
-    }
+    allBadges.forEach(badge => {
+      tdBadges.appendChild(createBadgeElement(user, badge));
+    });
     tr.appendChild(tdBadges);
 
-    // Affilié à
+    // Affiliation (logo + nom)
     const tdAffiliate = document.createElement('td');
     if(user.affiliateWith && entreprises[user.affiliateWith]){
       const img = document.createElement('img');
@@ -97,12 +131,12 @@ function renderUsers(){
     }
     tr.appendChild(tdAffiliate);
 
-    // Actions : bouton supprimer
+    // Actions (bouton supprimer)
     const tdActions = document.createElement('td');
     const btnDel = document.createElement('button');
-    btnDel.textContent = "Supprimer";
+    btnDel.textContent = 'Supprimer';
     btnDel.onclick = () => {
-      if(confirm(`Supprimer le compte de ${user.name} ?`)){
+      if(confirm(`Supprimer l'utilisateur ${user.name} ?`)){
         users = users.filter(u => u.id !== user.id);
         saveUsers();
         renderUsers();
