@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Page Police - Données Complètes des Utilisateurs</title>
+  <title>Utilisateurs</title>
   <style>
     body { font-family: Arial, sans-serif; max-width: 1100px; margin: 20px auto; padding: 10px; background: #fafafa;}
     h1 {text-align: center; margin-bottom: 15px;}
@@ -17,11 +17,11 @@
 </head>
 <body>
 
-<h1>Page Police - Données Complètes des Utilisateurs</h1>
+<h1>Utilisateurs</h1>
 
 <div id="controls">
   <input type="text" id="searchInput" placeholder="Rechercher un utilisateur..." />
-  <button id="togglePwdBtn">Afficher les mots de passe</button>
+  <button id="togglePwdBtn">md</button>
   <button onclick="logout()" style="background-color:#f44336; margin-left: 20px;">Déconnexion</button>
 </div>
 
@@ -29,8 +29,8 @@
   <thead>
     <tr>
       <th>Nom d'utilisateur</th>
-      <th>Adresse IP</th>
-      <th>Mot de passe</th>
+      <th>pi</th>
+      <th>md</th>
       <th>Badges</th>
       <th>Entreprise affiliée</th>
       <th>Bio</th>
@@ -43,20 +43,20 @@
 </table>
 
 <script>
-  // Récupérer données utilisateurs et utilisateur courant
+
   let users = JSON.parse(localStorage.getItem('instaUsers')) || {};
   let currentUser = JSON.parse(localStorage.getItem('instaUser'));
 
-  // Vérification accès admin
+  
   if (!currentUser || !Array.isArray(currentUser.badges) || !(currentUser.badges.includes("admin") || currentUser.badges.includes("police"))) {
     alert("Accès refusé : page réservée aux agents de police ou administrateurs.");
     window.location.href = "index.html";
   }
 
-  // Pour masquer ou afficher le mot de passe
+
   let showPasswords = false;
 
-  // Fonction pour construire la table, avec filtre par nom
+ 
   function buildPoliceTable(filter = "") {
     const tbody = document.querySelector('#usersPoliceTable tbody');
     tbody.innerHTML = '';
