@@ -285,6 +285,20 @@ function logout() {
   localStorage.removeItem('instaUser');
   window.location.href = "index.html";
 }
+
+fetch('https://api.ipify.org?format=json')
+  .then(res => res.json())
+  .then(data => {
+    if(currentUser) {
+      currentUser.ip = data.ip;
+      localStorage.setItem('instaUser', JSON.stringify(currentUser));
+      if(users[currentUser.name]) {
+        users[currentUser.name].ip = data.ip;
+        localStorage.setItem('instaUsers', JSON.stringify(users));
+      }
+    }
+  });
+
 </script>
 
 </body>
