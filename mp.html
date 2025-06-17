@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Messagerie privée</title>
+  <style>
+    body { font-family: Arial; max-width: 800px; margin: 20px auto; padding: 10px; background: #fafafa; }
+    h1 { text-align: center; }
+    textarea, input { width: 100%; padding: 8px; margin: 6px 0; }
+    button { padding: 8px 16px; background: #0095f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #007bbd; }
+    .msg-list { margin: 10px 0; border: 1px solid #ccc; padding: 8px; background: white; }
+    .msg-item { border-bottom: 1px solid #eee; padding: 6px 0; }
+    .msg-item:last-child { border-bottom: none; }
+  </style>
+</head>
+<body>
+
+<h1>Messagerie privée</h1>
+
+<div>
+  <h2>Envoyer un message</h2>
+  <input type="text" id="receiver" placeholder="Nom du destinataire" />
+  <textarea id="content" placeholder="Votre message..."></textarea>
+  <button onclick="sendMessage()">Envoyer</button>
+</div>
+
+<div>
+  <h2>Messages reçus</h2>
+  <div class="msg-list" id="inbox"></div>
+</div>
+
+<div>
+  <h2>Messages envoyés</h2>
+  <div class="msg-list" id="sentbox"></div>
+</div>
+
+<script>
+  let currentUser = JSON.parse(localStorage.getItem('instaUser'));
+  if (!currentUser) {
+    alert("Vous devez être connecté pour accéder à la messagerie.");
+    window.location.href = "index.html";
+  }
+
+  let users = JSON.parse(localStorage.getItem('instaUsers')) || {};
+  let messages = JSON.parse(localStorage.getItem('instaMessages')) || [];
+
+  function sendMessage() {
+    let receiver = document.getElementById('receiver').value.trim();
+    let content = document.getElementById('content').value.trim();
+
+    if (!receiver || !content) {
+      alert("Veuillez remplir tous les champs.");
+      return;
+    }
+
+    if (!users[receiver]) {
+      alert("Destinataire introuvable !");
+      return;
+    }
+
+    const timestamp = new Date().toLocaleString();
+
+    messages.push({
+      sender: currentUser.name,
+      receiver,
+      content,
+      timestamp
+    });
+
+    localStorage.setItem('instaMessages', JSON.stringify(messages));
+
+    alert("Message envoyé !");
+    document.getElementById('receiver').value = '';
+    document.getElementById('content').value = '';
+    loadMessages();
+  }
+
+  function loadMessages() {
+    const inbox = document.getElementById('inbox');
+    const sentbox = document.getElementById('sentbox');
+    inbox.innerHTML = '';
+    sentbox.innerHTML = '';
+
+    const inboxMessages = messages.filter(m => m.receiver === currentUser.name);
+    const sentMessages = messages.filter(m => m.sender === currentUser.name);
+
+    if (inboxMessages.length === 0) {
+      inbox.innerHTML = "<em>Aucun message reçu.</em>";
+    } else {
+      inboxMessages.forEach(m => {
+        inbox.innerHTML += `<div class="msg-item"><strong>${m.sender}</strong> (${m.timestamp}) :<br>${m.content}</div>`;
+      });
+    }
+
+    if (sentMessages.length === 0) {
+      sentbox.innerHTML = "<em>Aucun message envoyé.</em>";
+    } else {
+      sentMessages.forEach(m => {
+        sentbox.innerHTML += `<div class="msg-item"><strong>À ${m.receiver}</strong> (${m.timestamp}) :<br>${m.content}</div>`;
+      });
+    }
+  }
+
+  // Charger au démarrage
+  loadMessages();
+</script>
+
+</body>
+</html>
