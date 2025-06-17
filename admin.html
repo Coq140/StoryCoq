@@ -40,13 +40,13 @@
       <th>Avatar URL</th>
       <th>Bannière URL</th>
       <th>Story</th>
+      <th>Mot de passe</th>
       <th>Actions</th>
     </tr>
   </thead>
   <tbody></tbody>
 </table>
 
-<!-- Section ajout admin manuellement -->
 <div id="addAdminSection">
   <h2>Ajouter un admin manuellement</h2>
   <input type="text" id="newAdminUsername" placeholder="Nom d'utilisateur à rendre admin" />
@@ -54,11 +54,9 @@
 </div>
 
 <script>
-  // Récupérer les utilisateurs (objet: username => data)
   let users = JSON.parse(localStorage.getItem('instaUsers')) || {};
   let currentUser = JSON.parse(localStorage.getItem('instaUser'));
 
-  // Vérification accès admin
   if (!currentUser || !Array.isArray(currentUser.badges) || !currentUser.badges.includes("admin")) {
     alert("Accès refusé : page admin réservée aux administrateurs.");
     window.location.href = "index.html";
@@ -85,16 +83,13 @@
       const user = users[username];
       const tr = document.createElement('tr');
 
-      // Nom utilisateur
       const tdName = document.createElement('td');
       tdName.textContent = username;
       tr.appendChild(tdName);
 
-      // Badges (checkboxes)
       const tdBadges = document.createElement('td');
       allBadges.forEach(badge => {
         const label = document.createElement('label');
-        label.style.marginRight = "10px";
         label.className = "badge-checkbox";
 
         const checkbox = document.createElement('input');
@@ -111,7 +106,6 @@
           }
           saveUsers();
 
-          // Gérer activation/désactivation du champ entreprise affiliée
           if (badge === "entreprise") {
             inputEntreprise.disabled = !checkbox.checked;
             inputEntreprise.style.backgroundColor = checkbox.checked ? "" : "#eee";
@@ -131,7 +125,6 @@
       });
       tr.appendChild(tdBadges);
 
-      // Entreprise affiliée
       const tdEntreprise = document.createElement('td');
       const inputEntreprise = document.createElement('input');
       inputEntreprise.type = 'text';
@@ -142,7 +135,6 @@
       tdEntreprise.appendChild(inputEntreprise);
       tr.appendChild(tdEntreprise);
 
-      // Bio
       const tdBio = document.createElement('td');
       const inputBio = document.createElement('input');
       inputBio.type = 'text';
@@ -150,7 +142,6 @@
       tdBio.appendChild(inputBio);
       tr.appendChild(tdBio);
 
-      // Avatar
       const tdAvatar = document.createElement('td');
       const inputAvatar = document.createElement('input');
       inputAvatar.type = 'text';
@@ -158,7 +149,6 @@
       tdAvatar.appendChild(inputAvatar);
       tr.appendChild(tdAvatar);
 
-      // Bannière
       const tdBanner = document.createElement('td');
       const inputBanner = document.createElement('input');
       inputBanner.type = 'text';
@@ -166,7 +156,6 @@
       tdBanner.appendChild(inputBanner);
       tr.appendChild(tdBanner);
 
-      // Story
       const tdStory = document.createElement('td');
       const inputStory = document.createElement('input');
       inputStory.type = 'text';
@@ -174,19 +163,39 @@
       tdStory.appendChild(inputStory);
       tr.appendChild(tdStory);
 
-      // Actions
+      // Mot de passe
+      const tdPassword = document.createElement('td');
+      const inputPassword = document.createElement('input');
+      inputPassword.type = 'password';
+      inputPassword.value = user.password || "";
+      inputPassword.readOnly = true;
+      tdPassword.appendChild(inputPassword);
+
+      const btnTogglePwd = document.createElement('button');
+      btnTogglePwd.textContent = "Voir";
+      btnTogglePwd.style.marginTop = "5px";
+      btnTogglePwd.onclick = () => {
+        if (inputPassword.type === 'password') {
+          inputPassword.type = 'text';
+          btnTogglePwd.textContent = "Cacher";
+        } else {
+          inputPassword.type = 'password';
+          btnTogglePwd.textContent = "Voir";
+        }
+      };
+      tdPassword.appendChild(btnTogglePwd);
+      tr.appendChild(tdPassword);
+
       const tdActions = document.createElement('td');
       const btnSave = document.createElement('button');
       btnSave.textContent = "Sauvegarder";
       btnSave.onclick = () => {
-        // Sauvegarde données du formulaire
         user.entrepriseAffiliee = inputEntreprise.value.trim();
         user.bio = inputBio.value.trim();
         user.avatar = inputAvatar.value.trim() || "default-avatar.png";
         user.banner = inputBanner.value.trim();
         user.story = inputStory.value.trim();
 
-        // Si badge entreprise est désactivé, on vide l'affiliation
         if (!user.badges.includes("entreprise")) {
           user.entrepriseAffiliee = "";
           inputEntreprise.value = "";
@@ -222,7 +231,6 @@
       }
 
       tr.appendChild(tdActions);
-
       tbody.appendChild(tr);
     }
   }
@@ -254,7 +262,6 @@
     window.location.href = "index.html";
   }
 
-  // Initialisation
   buildTable();
 </script>
 
