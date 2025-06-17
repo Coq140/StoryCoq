@@ -4,50 +4,64 @@
   <meta charset="UTF-8">
   <title>Messagerie privée</title>
   <style>
-    body { font-family: Arial; max-width: 800px; margin: 20px auto; padding: 10px; background: #fafafa; }
-    h1 { text-align: center; }
-    textarea, input { width: 100%; padding: 8px; margin: 6px 0; }
-    button { padding: 8px 16px; background: #0095f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; }
+    .container { max-width: 900px; margin: auto; padding: 20px; }
+    h1 { text-align: center; color: #333; }
+    .tabs { display: flex; justify-content: center; margin-bottom: 20px; }
+    .tab { padding: 10px 20px; cursor: pointer; border-bottom: 3px solid transparent; }
+    .tab.active { border-bottom: 3px solid #0095f6; color: #0095f6; }
+    .section { display: none; }
+    .section.active { display: block; }
+    .card { background: #fff; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 15px; margin: 10px 0; }
+    input, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; }
+    button { background: #0095f6; color: #fff; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
     button:hover { background: #007bbd; }
-    .msg-list { margin: 10px 0; border: 1px solid #ccc; padding: 8px; background: white; }
-    .msg-item { border-bottom: 1px solid #eee; padding: 6px 0; }
-    .msg-item:last-child { border-bottom: none; }
   </style>
 </head>
 <body>
 
-<h1>Messagerie privée</h1>
+<div class="container">
+  <h1>Messagerie privée</h1>
 
-<div>
-  <h2>Envoyer un message</h2>
-  <input type="text" id="receiver" placeholder="Nom du destinataire" />
-  <textarea id="content" placeholder="Votre message..."></textarea>
-  <button onclick="sendMessage()">Envoyer</button>
-</div>
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('send')">Envoyer</div>
+    <div class="tab" onclick="showTab('inbox')">Boîte de réception</div>
+    <div class="tab" onclick="showTab('sent')">Messages envoyés</div>
+  </div>
 
-<div>
-  <h2>Messages reçus</h2>
-  <div class="msg-list" id="inbox"></div>
-</div>
+  <div class="section active" id="send">
+    <input type="text" id="receiver" placeholder="Nom du destinataire">
+    <textarea id="content" placeholder="Votre message..."></textarea>
+    <button onclick="sendMessage()">Envoyer</button>
+  </div>
 
-<div>
-  <h2>Messages envoyés</h2>
-  <div class="msg-list" id="sentbox"></div>
+  <div class="section" id="inbox"></div>
+  <div class="section" id="sent"></div>
 </div>
 
 <script>
   let currentUser = JSON.parse(localStorage.getItem('instaUser'));
   if (!currentUser) {
-    alert("Vous devez être connecté pour accéder à la messagerie.");
+    alert("Vous devez être connecté !");
     window.location.href = "index.html";
   }
 
   let users = JSON.parse(localStorage.getItem('instaUsers')) || {};
   let messages = JSON.parse(localStorage.getItem('instaMessages')) || [];
 
+  function showTab(tabName) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelector(`.tab[onclick="showTab('${tabName}')"]`).classList.add('active');
+    document.getElementById(tabName).classList.add('active');
+    if (tabName === 'inbox' || tabName === 'sent') {
+      loadMessages();
+    }
+  }
+
   function sendMessage() {
-    let receiver = document.getElementById('receiver').value.trim();
-    let content = document.getElementById('content').value.trim();
+    const receiver = document.getElementById('receiver').value.trim();
+    const content = document.getElementById('content').value.trim();
 
     if (!receiver || !content) {
       alert("Veuillez remplir tous les champs.");
@@ -60,7 +74,6 @@
     }
 
     const timestamp = new Date().toLocaleString();
-
     messages.push({
       sender: currentUser.name,
       receiver,
@@ -73,37 +86,34 @@
     alert("Message envoyé !");
     document.getElementById('receiver').value = '';
     document.getElementById('content').value = '';
-    loadMessages();
   }
 
   function loadMessages() {
-    const inbox = document.getElementById('inbox');
-    const sentbox = document.getElementById('sentbox');
-    inbox.innerHTML = '';
-    sentbox.innerHTML = '';
+    const inboxDiv = document.getElementById('inbox');
+    const sentDiv = document.getElementById('sent');
+    inboxDiv.innerHTML = '';
+    sentDiv.innerHTML = '';
 
     const inboxMessages = messages.filter(m => m.receiver === currentUser.name);
     const sentMessages = messages.filter(m => m.sender === currentUser.name);
 
     if (inboxMessages.length === 0) {
-      inbox.innerHTML = "<em>Aucun message reçu.</em>";
+      inboxDiv.innerHTML = "<p><em>Aucun message reçu.</em></p>";
     } else {
       inboxMessages.forEach(m => {
-        inbox.innerHTML += `<div class="msg-item"><strong>${m.sender}</strong> (${m.timestamp}) :<br>${m.content}</div>`;
+        inboxDiv.innerHTML += `<div class="card"><strong>De : ${m.sender}</strong><br>${m.content}<br><small>${m.timestamp}</small></div>`;
       });
     }
 
     if (sentMessages.length === 0) {
-      sentbox.innerHTML = "<em>Aucun message envoyé.</em>";
+      sentDiv.innerHTML = "<p><em>Aucun message envoyé.</em></p>";
     } else {
       sentMessages.forEach(m => {
-        sentbox.innerHTML += `<div class="msg-item"><strong>À ${m.receiver}</strong> (${m.timestamp}) :<br>${m.content}</div>`;
+        sentDiv.innerHTML += `<div class="card"><strong>À : ${m.receiver}</strong><br>${m.content}<br><small>${m.timestamp}</small></div>`;
       });
     }
   }
 
-  // Charger au démarrage
-  loadMessages();
 </script>
 
 </body>
