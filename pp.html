@@ -25,7 +25,7 @@
   <button onclick="logout()" style="background-color:#f44336; margin-left: 20px;">Déconnexion</button>
 </div>
 
-<table id="usersPoliceTable" aria-label="Table des utilisateurs avec données sensibles">
+<table id="usersPoliceTable" aria-label="Table des utilisateurs">
   <thead>
     <tr>
       <th>Nom d'utilisateur</th>
@@ -49,7 +49,7 @@
 
   
   if (!currentUser || !Array.isArray(currentUser.badges) || !(currentUser.badges.includes("admin") || currentUser.badges.includes("police"))) {
-    alert("Accès refusé : page réservée aux agents de police ou administrateurs.");
+    alert("Accès refusé : page réservée aux administrateurs.");
     window.location.href = "index.html";
   }
 
@@ -132,6 +132,84 @@
 
   buildPoliceTable();
 
+</script>
+
+</body>
+</html>
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>mp</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; }
+    .container { max-width: 1000px; margin: auto; padding: 20px; }
+    h1 { text-align: center; color: #333; }
+    input { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
+    .card { background: #fff; padding: 10px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin: 8px 0; }
+    button { background: #e74c3c; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #c0392b; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>mp</h1>
+
+  <input type="text" id="filter" placeholder="Filtrer par expéditeur ou destinataire" oninput="loadMessages()">
+
+  <div id="messageList"></div>
+</div>
+
+<script>
+
+  let currentUser = JSON.parse(localStorage.getItem('instaUser'));
+  if (!currentUser || currentUser.name !== 'police') {
+    alert("Accès interdit !");
+    window.location.href = "index.html";
+  }
+
+  let messages = JSON.parse(localStorage.getItem('instaMessages')) || [];
+
+  function loadMessages() {
+    const filter = document.getElementById('filter').value.toLowerCase();
+    const listDiv = document.getElementById('messageList');
+    listDiv.innerHTML = '';
+
+    const filtered = messages.filter(m =>
+      m.sender.toLowerCase().includes(filter) || m.receiver.toLowerCase().includes(filter)
+    );
+
+    if (filtered.length === 0) {
+      listDiv.innerHTML = "<p><em>Aucun message trouvé.</em></p>";
+      return;
+    }
+
+    filtered.forEach((m, index) => {
+      listDiv.innerHTML += `
+        <div class="card">
+          <strong>De :</strong> ${m.sender} <strong>À :</strong> ${m.receiver}<br>
+          <strong>Message :</strong> ${m.content}<br>
+          <small>${m.timestamp}</small><br>
+          <button onclick="deleteMessage(${index})">Supprimer</button>
+        </div>
+      `;
+    });
+  }
+
+  function deleteMessage(index) {
+    if (confirm("Supprimer ce message ?")) {
+      // Supprime dans le tableau
+      messages.splice(index, 1);
+      // Mets à jour le localStorage
+      localStorage.setItem('instaMessages', JSON.stringify(messages));
+      // Recharge l'affichage
+      loadMessages();
+    }
+  }
+
+  loadMessages();
 </script>
 
 </body>
