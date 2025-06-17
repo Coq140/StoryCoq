@@ -214,3 +214,120 @@
 
 </body>
 </html>
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Système de messagerie sécurisé</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    input, button, textarea { margin: 5px; padding: 5px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 5px; text-align: left; }
+  </style>
+</head>
+<body>
+  <h1>Messagerie privée</h1>
+
+  <div>
+    <label>Utilisateur : <input type="text" id="username"></label><br>
+    <label>Mot de passe : <input type="password" id="password"><button onclick="togglePassword()">👁️</button></label><br>
+    <button onclick="login()">Connexion</button>
+  </div>
+
+  <div id="messagerie" style="display:none;">
+    <h2>Envoyer un message</h2>
+    <label>À : <input type="text" id="toUser"></label><br>
+    <textarea id="messageContent" placeholder="Votre message"></textarea><br>
+    <button onclick="envoyerMessage()">Envoyer</button>
+
+    <h2>Rechercher un mot</h2>
+    <input type="text" id="searchTerm"><button onclick="rechercherMessages()">Rechercher</button>
+    <div id="searchResults"></div>
+
+    <h2>Messages reçus</h2>
+    <div id="messages"></div>
+  </div>
+
+  <div id="admin" style="display:none;">
+    <h2>Outils police / admin</h2>
+    <button onclick="afficherTousLesMessages()">Voir tous les messages</button>
+    <div id="adminMessages"></div>
+  </div>
+
+  <script>
+    let users = JSON.parse(localStorage.getItem("instaUsers")) || {};
+    let messages = JSON.parse(localStorage.getItem("instaMessages")) || [];
+    let bannedUsers = JSON.parse(localStorage.getItem("instaBans")) || [];
+    let currentUser = null;
+
+    function togglePassword() {
+      const pass = document.getElementById("password");
+      pass.type = pass.type === "password" ? "text" : "password";
+    }
+
+    function login() {
+      const user = document.getElementById("username").value;
+      const pass = document.getElementById("password").value;
+
+      if (bannedUsers.includes(user)) {
+        alert("Vous êtes banni.");
+        return;
+      }
+
+      if (!users[user]) users[user] = { password: pass, muted: [] };
+      if (users[user].password !== pass) {
+        alert("Mot de passe incorrect.");
+        return;
+      }
+
+      currentUser = user;
+      localStorage.setItem("instaUsers", JSON.stringify(users));
+      document.getElementById("messagerie").style.display = "block";
+      if (user === "admin") document.getElementById("admin").style.display = "block";
+      afficherMessages();
+    }
+
+    function envoyerMessage() {
+      const to = document.getElementById("toUser").value;
+      const content = document.getElementById("messageContent").value;
+      const position = "Simulé - Paris"; // Exemple
+
+      if (!users[to]) {
+        alert("Destinataire inconnu.");
+        return;
+      }
+
+      if (users[to].muted.includes(currentUser)) {
+        alert("Cet utilisateur vous ignore.");
+        return;
+      }
+
+      messages.push({ de: currentUser, a: to, contenu: content, date: new Date().toLocaleString(), position });
+      localStorage.setItem("instaMessages", JSON.stringify(messages));
+      afficherMessages();
+    }
+
+    function afficherMessages() {
+      const msgDiv = document.getElementById("messages");
+      msgDiv.innerHTML = messages.filter(m => m.a === currentUser).map(m =>
+        `<p><b>${m.de}</b>: ${m.contenu} <i>(${m.date}, ${m.position})</i></p>`
+      ).join("");
+    }
+
+    function rechercherMessages() {
+      const term = document.getElementById("searchTerm").value;
+      const results = messages.filter(m => m.contenu.includes(term));
+      document.getElementById("searchResults").innerHTML =
+        results.map(m => `<p>${m.de} → ${m.a} : ${m.contenu} <i>${m.date}</i></p>`).join("");
+    }
+
+    function afficherTousLesMessages() {
+      document.getElementById("adminMessages").innerHTML =
+        `<table><tr><th>De</th><th>À</th><th>Contenu</th><th>Date</th><th>Position</th></tr>` +
+        messages.map(m => `<tr><td>${m.de}</td><td>${m.a}</td><td>${m.contenu}</td><td>${m.date}</td><td>${m.position}</td></tr>`).join("") + `</table>`;
+    }
+  </script>
+</body>
+</html>
