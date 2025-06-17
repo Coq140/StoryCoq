@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Page Police - Données Complètes des Utilisateurs</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 1100px; margin: 20px auto; padding: 10px; background: #fafafa;}
+    h1 {text-align: center; margin-bottom: 15px;}
+    table {width: 100%; border-collapse: collapse; margin-top: 15px;}
+    th, td {border: 1px solid #ccc; padding: 8px; text-align: left; word-break: break-word;}
+    th {background-color: #444; color: white;}
+    input[type="text"] {width: 300px; padding: 6px; margin-bottom: 10px; font-size: 16px;}
+    button {padding: 6px 12px; margin-left: 10px; cursor: pointer; font-weight: bold; border-radius: 4px; border: none; background-color: #0095f6; color: white;}
+    button:hover {background-color: #007bbd;}
+    #controls {margin-bottom: 10px;}
+  </style>
+</head>
+<body>
+
+<h1>Page Police - Données Complètes des Utilisateurs</h1>
+
+<div id="controls">
+  <input type="text" id="searchInput" placeholder="Rechercher un utilisateur..." />
+  <button id="togglePwdBtn">Afficher les mots de passe</button>
+  <button onclick="logout()" style="background-color:#f44336; margin-left: 20px;">Déconnexion</button>
+</div>
+
+<table id="usersPoliceTable" aria-label="Table des utilisateurs avec données sensibles">
+  <thead>
+    <tr>
+      <th>Nom d'utilisateur</th>
+      <th>Adresse IP</th>
+      <th>Mot de passe</th>
+      <th>Badges</th>
+      <th>Entreprise affiliée</th>
+      <th>Bio</th>
+      <th>Avatar URL</th>
+      <th>Bannière URL</th>
+      <th>Story</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+  // Récupérer données utilisateurs et utilisateur courant
+  let users = JSON.parse(localStorage.getItem('instaUsers')) || {};
+  let currentUser = JSON.parse(localStorage.getItem('instaUser'));
+
+  // Vérification accès admin
+  if (!currentUser || !Array.isArray(currentUser.badges) || !(currentUser.badges.includes("admin") || currentUser.badges.includes("police"))) {
+    alert("Accès refusé : page réservée aux agents de police ou administrateurs.");
+    window.location.href = "index.html";
+  }
+
+  // Pour masquer ou afficher le mot de passe
+  let showPasswords = false;
+
+  // Fonction pour construire la table, avec filtre par nom
+  function buildPoliceTable(filter = "") {
+    const tbody = document.querySelector('#usersPoliceTable tbody');
+    tbody.innerHTML = '';
+
+    for (const username in users) {
+      if (username.toLowerCase().indexOf(filter.toLowerCase()) === -1) continue; // filtre
+
+      const user = users[username];
+      const tr = document.createElement('tr');
+
+      // Nom utilisateur
+      let tdName = document.createElement('td');
+      tdName.textContent = username;
+      tr.appendChild(tdName);
+
+      let tdIP = document.createElement('td');
+      tdIP.textContent = user.ip || "Non défini";
+      tr.appendChild(tdIP);
+
+      let tdPassword = document.createElement('td');
+      tdPassword.textContent = showPasswords ? (user.password || "(non défini)") : "••••••••";
+      tr.appendChild(tdPassword);
+
+      // Badges
+      let tdBadges = document.createElement('td');
+      tdBadges.textContent = (Array.isArray(user.badges) ? user.badges.join(", ") : "");
+      tr.appendChild(tdBadges);
+
+      // Entreprise affiliée
+      let tdEntreprise = document.createElement('td');
+      tdEntreprise.textContent = user.entrepriseAffiliee || "";
+      tr.appendChild(tdEntreprise);
+
+      // Bio
+      let tdBio = document.createElement('td');
+      tdBio.textContent = user.bio || "";
+      tr.appendChild(tdBio);
+
+      // Avatar URL
+      let tdAvatar = document.createElement('td');
+      tdAvatar.textContent = user.avatar || "";
+      tr.appendChild(tdAvatar);
+
+      // Bannière URL
+      let tdBanner = document.createElement('td');
+      tdBanner.textContent = user.banner || "";
+      tr.appendChild(tdBanner);
+
+      // Story
+      let tdStory = document.createElement('td');
+      tdStory.textContent = user.story || "";
+      tr.appendChild(tdStory);
+
+      tbody.appendChild(tr);
+    }
+  }
+
+  document.getElementById('togglePwdBtn').addEventListener('click', () => {
+    showPasswords = !showPasswords;
+    document.getElementById('togglePwdBtn').textContent = showPasswords ? "Masquer les mots de passe" : "Afficher les mots de passe";
+    buildPoliceTable(document.getElementById('searchInput').value);
+  });
+
+  document.getElementById('searchInput').addEventListener('input', e => {
+    buildPoliceTable(e.target.value);
+  });
+
+  // Déconnexion
+  function logout() {
+    localStorage.removeItem('instaUser');
+    window.location.href = "index.html";
+  }
+
+  buildPoliceTable();
+
+</script>
+
+</body>
+</html>
