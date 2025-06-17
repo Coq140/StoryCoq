@@ -31,9 +31,9 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 function getBadgeIcon(type) {
-  if (type === "certified") return "✔";
-  if (type === "enterprise") return "🏢";
-  if (type === "admin") return "★";
+  if (type === "certifié") return "✔";
+  if (type === "gouvernement") return "🏢";
+  if (type === "système") return "★";
   return "";
 }
 document.addEventListener("DOMContentLoaded", function() {
