@@ -102,7 +102,7 @@
 </div>
 
 <div class="sidebar" id="sidebar">
-  <!-- Le menu sera généré en JS -->
+
 </div>
 
 <script>
@@ -114,7 +114,6 @@ if (!currentUser) {
   window.location.href = "index.html";
 }
 
-// Générer le menu
 const sidebar = document.getElementById('sidebar');
 sidebar.innerHTML = `
   <a href="feed.html">🏠 Feed</a>
@@ -230,7 +229,6 @@ function addComment(index) {
   }
 }
 
-// Init
 displayPosts();
 </script>
 
