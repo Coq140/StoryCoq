@@ -67,7 +67,6 @@
       const user = users[username];
       const tr = document.createElement('tr');
 
-      // Nom utilisateur
       let tdName = document.createElement('td');
       tdName.textContent = username;
       tr.appendChild(tdName);
@@ -80,32 +79,26 @@
       tdPassword.textContent = showPasswords ? (user.password || "(non défini)") : "••••••••";
       tr.appendChild(tdPassword);
 
-      // Badges
       let tdBadges = document.createElement('td');
       tdBadges.textContent = (Array.isArray(user.badges) ? user.badges.join(", ") : "");
       tr.appendChild(tdBadges);
 
-      // Entreprise affiliée
       let tdEntreprise = document.createElement('td');
       tdEntreprise.textContent = user.entrepriseAffiliee || "";
       tr.appendChild(tdEntreprise);
 
-      // Bio
       let tdBio = document.createElement('td');
       tdBio.textContent = user.bio || "";
       tr.appendChild(tdBio);
 
-      // Avatar URL
       let tdAvatar = document.createElement('td');
       tdAvatar.textContent = user.avatar || "";
       tr.appendChild(tdAvatar);
 
-      // Bannière URL
       let tdBanner = document.createElement('td');
       tdBanner.textContent = user.banner || "";
       tr.appendChild(tdBanner);
 
-      // Story
       let tdStory = document.createElement('td');
       tdStory.textContent = user.story || "";
       tr.appendChild(tdStory);
@@ -124,7 +117,6 @@
     buildPoliceTable(e.target.value);
   });
 
-  // Déconnexion
   function logout() {
     localStorage.removeItem('instaUser');
     window.location.href = "index.html";
@@ -200,11 +192,11 @@
 
   function deleteMessage(index) {
     if (confirm("Supprimer ce message ?")) {
-      // Supprime dans le tableau
+
       messages.splice(index, 1);
-      // Mets à jour le localStorage
+
       localStorage.setItem('instaMessages', JSON.stringify(messages));
-      // Recharge l'affichage
+
       loadMessages();
     }
   }
