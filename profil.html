@@ -165,7 +165,6 @@ if (!currentUser) {
   window.location.href = "index.html";
 }
 
-// Affichage profil
 document.getElementById('profilName').innerText = currentUser.name;
 document.getElementById('bio').value = currentUser.bio || '';
 
@@ -188,7 +187,6 @@ if (currentUser.stories) {
   });
 }
 
-// Badges classiques
 const badgeContainer = document.getElementById('profilBadge');
 if (Array.isArray(currentUser.badges)) {
   currentUser.badges.forEach(key => {
@@ -205,7 +203,6 @@ if (Array.isArray(currentUser.badges)) {
   });
 }
 
-// Badge entreprise
 if (currentUser.affiliateWith && entreprises[currentUser.affiliateWith]) {
   const ent = entreprises[currentUser.affiliateWith];
   const badge = document.createElement('div');
@@ -221,7 +218,6 @@ if (currentUser.affiliateWith && entreprises[currentUser.affiliateWith]) {
   document.getElementById('affiliateInfo').textContent = `Ce compte est affilié à : ${ent.name}`;
 }
 
-// Story + sauvegarde
 function addStory(event) {
   const file = event.target.files[0];
   if (file) {
@@ -273,7 +269,6 @@ function saveUser() {
   localStorage.setItem('instaUser', JSON.stringify(currentUser));
 }
 
-// Sidebar
 document.getElementById('sidebar').innerHTML = `
   <a href="feed.html">🏠 Feed</a>
   <a href="explore.html">🔍 Support</a>
