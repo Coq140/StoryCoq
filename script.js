@@ -6,7 +6,7 @@ function createAccount() {
   }
   const user = {
     name: username,
-    badge: ""  // Pas certifié par défaut
+    badge: ""
   };
   localStorage.setItem('instaUser', JSON.stringify(user));
   window.location.href = 'feed.html';
