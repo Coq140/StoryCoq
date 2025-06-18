@@ -31,7 +31,6 @@
   <h2>Connexion / Inscription</h2>
 
   <input type="text" id="username" placeholder="Nom d'utilisateur" />
-  <!-- Si tu veux ajouter email : <input type="email" id="email" placeholder="Email" /> -->
   <input type="password" id="password" placeholder="Mot de passe" />
 
   <button onclick="login()">Se connecter</button>
@@ -85,7 +84,6 @@
         return;
       }
 
-      // Connexion réussie : sauvegarder et rediriger
       localStorage.setItem('instaUser', JSON.stringify({ name: username, ...users[username] }));
       showMessage("Connexion réussie !", false);
       setTimeout(() => {
@@ -106,7 +104,6 @@
         return;
       }
 
-      // Créer utilisateur
       users[username] = {
         password: password,
         badge: "",
@@ -118,7 +115,6 @@
 
       saveUsers(users);
 
-      // Auto connexion
       localStorage.setItem('instaUser', JSON.stringify({ name: username, ...users[username] }));
       showMessage("Compte créé avec succès !", false);
       setTimeout(() => {
