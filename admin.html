@@ -266,3 +266,49 @@
 
 </body>
 </html>
+
+<div id="adminPanel" style="margin-top: 40px; border-top: 2px solid #ccc; padding-top: 20px;">
+  <h2>+</h2>
+
+  <form id="createUserForm" style="margin-bottom: 20px;">
+    <label for="newUsername">Nom d'utilisateur : </label>
+    <input type="text" id="newUsername" required>
+    <button type="submit">Créer</button>
+  </form>
+
+<script>
+        }
+      }
+    };
+
+    li.appendChild(delBtn);
+    list.appendChild(li);
+  });
+}
+
+document.getElementById('createUserForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const username = document.getElementById('newUsername').value.trim();
+  if (!username) return alert("Nom d'utilisateur invalide.");
+  const users = loadUsers();
+  if (users[username]) return alert("Utilisateur déjà existant.");
+
+  const user = {
+    username: username,
+    name: username,
+    bio: "",
+    avatar: "",
+    banner: "",
+    badges: [],
+    stories: [],
+  };
+  users[username] = user;
+  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(users));
+  alert(`Utilisateur ${username} créé.`);
+  document.getElementById('newUsername').value = '';
+  refreshUserList();
+  populateUserSelect();
+});
+
+refreshUserList();
+</script>
